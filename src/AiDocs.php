@@ -34,7 +34,9 @@ final class AiDocs
 
     public static function root(): string
     {
-        return rtrim(base_path((string) config('ai-docs.root')), '/');
+        $path = rtrim(base_path((string) config('ai-docs.root')), '/');
+
+        return realpath($path) ?: $path;
     }
 
     public static function excluded(string $relative): bool

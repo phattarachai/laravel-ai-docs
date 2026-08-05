@@ -49,3 +49,12 @@ it('wraps every table and diagram in a block the panel can open full screen', fu
         ->and(substr_count($html, 'class="doc-zoom"'))->toBe(2)
         ->and($html)->toContain('<div class="doc-wide"><button type="button" class="doc-zoom" aria-label="Full screen"></button><div class="doc-tablebox"><table>');
 });
+
+it('still rewrites links when the configured root climbs out of the project', function (): void {
+    // `AI_DOCS_ROOT=../shared/docs` is a legitimate layout. Without normalising, the
+    // un-resolved `..` never prefix-matched the resolved link target, so every
+    // doc-to-doc link silently degraded to plain text.
+    config()->set('ai-docs.root', '.ai/../.ai/documents');
+
+    expect(Docs::page('links')['html'])->toContain('href="/docs/guides/labels"');
+});

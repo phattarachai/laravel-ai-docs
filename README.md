@@ -7,6 +7,13 @@ The files stay where they are, next to the code, versioned with it. The panel mo
 gate, and reads the directory as it is: folders become sidebar groups, `# Heading` becomes the nav label, images sitting
 beside the markdown just work.
 
+![A doc page with the sidebar tree, a rendered mermaid flowchart and the outline column](https://raw.githubusercontent.com/phattarachai/laravel-ai-docs/main/art/light.png)
+
+![The same page in the dark scheme](https://raw.githubusercontent.com/phattarachai/laravel-ai-docs/main/art/dark.png)
+
+<sub>Both screenshots render the fictional documentation tree in [`art/demo-docs/`](art/demo-docs) — no real project or
+person appears in them.</sub>
+
 ## Requirements — read these first
 
 - **PHP 8.4+, Laravel 11/12/13.**
@@ -109,8 +116,9 @@ callouts, with the title translated.
 same gate, so nothing has to be copied into `public/`. Only real image extensions inside the docs root are served, and
 `exclude`d paths are refused.
 
-**Copy the path, not the page.** A button on every page copies its repo-relative path — `.ai/documents/admin/ai-docs.md`
-— ready to paste after `@` in Claude Code, Cursor, or whatever is reading your repo. Every heading also gets a `#`
+**Copy the path, not the page.** A button on every page copies its repo-relative path —
+`.ai/documents/billing/payment-retries.md` — ready to paste after `@` in Claude Code, Cursor, or whatever is reading
+your repo. Every heading also gets a `#`
 permalink; clicking it copies the absolute URL rather than navigating.
 
 **Full screen** — tables, diagrams and images each get a zoom button that opens them in an overlay, because a sequence
@@ -127,26 +135,28 @@ self-invalidating. Edit a file and reload; there is nothing to warm at deploy an
 ## Writing docs
 
 Plain markdown works with no front matter at all. When there is none, the nav label is the H1, cut at the first
-` — `, ` – `, ` (` or `: ` — so a page titled `# Stock — the five buckets per SKU` lists as **Stock**.
+` — `, ` – `, ` (` or `: ` — so a page titled `# Payment retries — the backoff schedule` lists as
+**Payment retries**.
 
 Front matter overrides any of that, and every key is optional:
 
 ````markdown
 ---
-title: Stock — the five buckets per SKU
-nav: Stock
+title: Payment retries — the backoff schedule
+nav: Payment retries
 order: 10
 ---
 
-# Stock
+# Payment retries
 
 > [!IMPORTANT]
-> `availableToSell` is the only number a sales rep should ever read.
+> A retry never re-runs the pipeline. It resumes from the stored idempotency record.
 
 ```mermaid
 flowchart LR
-    SO[SO confirmed] --> R[Soft reserve]:::decision
-    R --> DN[DN dispatched] --> P[Physical deducted]:::ok
+    C[Charge failed] --> R{Retryable?}:::decision
+    R -->|yes| S[Schedule backoff] --> D[Settled]:::ok
+    R -->|no| X[Marked uncollectible]:::bad
 ```
 ````
 
@@ -162,6 +172,11 @@ root of the docs folder, or the first page of the first group if there is none.
 Links between docs are rewritten to panel URLs and navigate through Inertia — including anchors. A relative link that
 points outside the docs folder renders as plain text unless `source_link_base` is set, in which case it becomes a link
 to your code host.
+
+How to *organize* the folder — flat-first structure, the `index.md` map, the 500-line rule, how `order` and `nav`
+interact with the folder grouping — is [`docs/authoring.md`](docs/authoring.md). If an agent writes your docs, those
+same conventions ship as a drop-in Claude Code skill in
+[`examples/document-skill/`](examples/document-skill/SKILL.md).
 
 ## Configuration
 
