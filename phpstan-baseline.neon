@@ -1,0 +1,19 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Parameter \#3 \$contents of class League\\CommonMark\\Util\\HtmlElement constructor expects array\<Stringable\>\|string\|Stringable\|null, array\<int, League\\CommonMark\\Util\\HtmlElement\|string\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Support/CalloutRenderer.php
+
+		-
+			message: '#^Call to an undefined method SplFileInfo\:\:getRelativePath\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Support/DocTree.php
+
+		-
+			message: '#^Call to an undefined method SplFileInfo\:\:getRelativePathname\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Support/DocTree.php
