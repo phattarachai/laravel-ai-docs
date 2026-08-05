@@ -1,0 +1,81 @@
+/* Token classes emitted by tempest/highlight's CssTheme. see README.md */
+
+.doc-root {
+  --hl-keyword: #cf222e;
+  --hl-operator: #cf222e;
+  --hl-type: #953800;
+  --hl-variable: #953800;
+  --hl-property: #0550ae;
+  --hl-value: #0a3069;
+  --hl-number: #0550ae;
+  --hl-literal: #0550ae;
+  --hl-comment: #6e7781;
+  --hl-attribute: #8250df;
+  --hl-generic: #8250df;
+  --hl-injection: #116329;
+}
+
+.doc-root.scheme-dark {
+  --hl-keyword: #ff7b72;
+  --hl-operator: #ff7b72;
+  --hl-type: #ffa657;
+  --hl-variable: #ffa657;
+  --hl-property: #79c0ff;
+  --hl-value: #a5d6ff;
+  --hl-number: #79c0ff;
+  --hl-literal: #79c0ff;
+  --hl-comment: #8b949e;
+  --hl-attribute: #d2a8ff;
+  --hl-generic: #d2a8ff;
+  --hl-injection: #7ee787;
+}
+
+.doc-root .hl-keyword {
+  color: var(--hl-keyword);
+}
+
+.doc-root .hl-operator {
+  color: var(--hl-operator);
+}
+
+.doc-root .hl-type {
+  color: var(--hl-type);
+}
+
+.doc-root .hl-variable {
+  color: var(--hl-variable);
+}
+
+.doc-root .hl-property {
+  color: var(--hl-property);
+}
+
+.doc-root .hl-value {
+  color: var(--hl-value);
+}
+
+.doc-root .hl-number {
+  color: var(--hl-number);
+}
+
+.doc-root .hl-literal {
+  color: var(--hl-literal);
+}
+
+.doc-root .hl-comment {
+  color: var(--hl-comment);
+  font-style: italic;
+}
+
+.doc-root .hl-attribute {
+  color: var(--hl-attribute);
+  font-style: italic;
+}
+
+.doc-root .hl-generic {
+  color: var(--hl-generic);
+}
+
+.doc-root .hl-injection {
+  color: var(--hl-injection);
+}
