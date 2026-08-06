@@ -14,7 +14,16 @@ it('shortens a verbose heading into a nav label without breaking Thai', function
 });
 
 it('leaves a cut inside the first three characters alone', function (): void {
-    expect(Meta::shorten('A — B'))->toBe('A — B');
+    expect(Meta::shorten('A — B'))->toBe('A — B')
+        ->and(Meta::tail('A — B'))->toBe('');
+});
+
+it('takes the tail from the earliest cut, so a colliding folder still reads apart', function (): void {
+    expect(Meta::tail('Admin panel — form conventions'))->toBe('form conventions')
+        ->and(Meta::tail('Admin panel: tables — and their columns'))->toBe('tables — and their columns')
+        ->and(Meta::tail('Auth & dashboard (spec §1.0 — built)'))->toBe('spec §1.0 — built')
+        ->and(Meta::tail('แดชบอร์ด — ภาพรวมของดีลเลอร์'))->toBe('ภาพรวมของดีลเลอร์')
+        ->and(Meta::tail('Mail Log'))->toBe('');
 });
 
 it('reproduces the heading slugs GitHub anchors were written against', function (): void {

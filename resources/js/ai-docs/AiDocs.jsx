@@ -4,7 +4,7 @@ import { router } from '@inertiajs/react'
 import './ai-docs.css'
 import './highlight.css'
 import { copyText } from './copy'
-import { DocNav } from './DocNav'
+import { DocNav, locate } from './DocNav'
 import { DocSearch } from './DocSearch'
 import { DocToc } from './DocToc'
 import { DocZoom } from './DocZoom'
@@ -98,7 +98,7 @@ const DocProse = memo(function DocProse({ html, innerRef }) {
  *
  * @param {string} base panel root URL
  * @param {{name: string, accent: string, url: string, logo: string|null, tables: 'wrap'|'scroll'}} brand
- * @param {Array<{key: string, label: string, items: Array<{slug: string, title: string, nav: string}>}>} groups
+ * @param {Array<{key: string, label: string, items: Array<{slug: string, title: string, nav: string}>, groups: Array<object>}>} groups nested; `groups` recurses
  * @param {Record<string, string>|undefined} strings copy overrides, from `trans('ai-docs::ui')`
  * @param {{slug: string, title: string, path: string, html: string, toc: Array<{id: string, text: string, level: number}>}|null} page
  */
@@ -116,7 +116,11 @@ export default function AiDocs({ base = '/docs', brand, groups, page = null, str
   const t = useCallback((key, values) => translate(strings, key, values), [strings])
   const timer = useRef(0)
 
-  const group = tree.find((item) => item.items.some((doc) => doc.slug === page?.slug)) ?? null
+  const trail = (page ? locate(tree, page.slug) : null) ?? []
+  const crumb = trail
+    .map((group) => group.label)
+    .filter(Boolean)
+    .join(' · ')
 
   useMermaid(proseRef, page?.slug, scheme)
 
@@ -239,7 +243,7 @@ export default function AiDocs({ base = '/docs', brand, groups, page = null, str
 
             {page && (
               <span className="doc-crumb">
-                {group?.label ? `${group.label} · ` : ''}
+                {crumb ? `${crumb} · ` : ''}
                 <b>{page.title}</b>
               </span>
             )}
@@ -279,7 +283,7 @@ export default function AiDocs({ base = '/docs', brand, groups, page = null, str
             base={base}
             groups={tree}
             current={page?.slug ?? null}
-            currentGroup={group?.key ?? null}
+            openKeys={trail.map((group) => group.key)}
             onNavigate={() => setDrawer(null)}
           />
 

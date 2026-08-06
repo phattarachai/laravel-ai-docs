@@ -8,11 +8,16 @@ use Phattarachai\AiDocs\AiDocs;
 use SplFileInfo;
 use Symfony\Component\Finder\Finder;
 
-/** @see README.md */
+/**
+ * @phpstan-type DocItem array{slug: string, title: string, nav: string}
+ * @phpstan-type DocGroup array{key: string, label: string, items: list<DocItem>, groups: list<mixed>}
+ *
+ * @see README.md
+ */
 final class DocTree
 {
     /**
-     * @return list<array{key: string, label: string, items: list<array{slug: string, title: string, nav: string}>}>
+     * @return list<DocGroup>
      */
     public static function groups(): array
     {
@@ -38,12 +43,39 @@ final class DocTree
                 'slug' => substr($relative, 0, -3),
                 'title' => $meta['title'],
                 'nav' => $meta['nav'],
+                'navExplicit' => $meta['navExplicit'],
                 'order' => $meta['order'],
                 'file' => $file->getFilename(),
             ];
         }
 
-        return self::order($pages);
+        return self::tree($pages);
+    }
+
+    /**
+     * Every doc in the tree, depth first, in sidebar order.
+     *
+     * @param  list<DocGroup>|null  $groups
+     * @return list<array{slug: string, title: string, nav: string, group: string}>
+     */
+    public static function flatten(?array $groups = null, string $trail = ''): array
+    {
+        $flat = [];
+
+        foreach ($groups ?? self::groups() as $group) {
+            $label = trim($trail === '' ? $group['label'] : $trail.' · '.$group['label'], ' ·');
+
+            foreach ($group['items'] as $item) {
+                $flat[] = [...$item, 'group' => $label];
+            }
+
+            /** @var list<DocGroup> $children */
+            $children = $group['groups'];
+
+            $flat = [...$flat, ...self::flatten($children, $label)];
+        }
+
+        return $flat;
     }
 
     public static function title(string $absolute, string $fallback): string
@@ -52,34 +84,138 @@ final class DocTree
     }
 
     /**
-     * @param  array<string, list<array{slug: string, title: string, nav: string, order: int|null, file: string}>>  $pages
-     * @return list<array{key: string, label: string, items: list<array{slug: string, title: string, nav: string}>}>
+     * The root group comes first and carries an empty label, so its pages list ungrouped
+     * above every accordion. Folders follow in path order, each nesting its own subfolders.
+     *
+     * @param  array<string, list<array{slug: string, title: string, nav: string, navExplicit: bool, order: int|null, file: string}>>  $pages
+     * @return list<DocGroup>
      */
-    private static function order(array $pages): array
+    private static function tree(array $pages): array
     {
-        uksort($pages, fn (string $a, string $b): int => [$a === '' ? 0 : 1, $a] <=> [$b === '' ? 0 : 1, $b]);
-
+        $directories = self::directories(array_keys($pages));
         $groups = [];
 
-        foreach ($pages as $directory => $items) {
-            usort($items, fn (array $a, array $b): int => [$a['order'] ?? 500, $a['file'] !== 'index.md', $a['nav']]
-                <=> [$b['order'] ?? 500, $b['file'] !== 'index.md', $b['nav']]);
-
+        if (isset($pages[''])) {
             $groups[] = [
-                'key' => $directory === '' ? '_root' : $directory,
-                'label' => $directory === '' ? '' : ucfirst(str_replace(['-', '_'], ' ', $directory)),
-                'items' => array_map(
-                    fn (array $item): array => [
-                        'slug' => $item['slug'],
-                        'title' => $item['title'],
-                        'nav' => $item['nav'],
-                    ],
-                    $items,
-                ),
+                'key' => '_root',
+                'label' => '',
+                'items' => self::items($pages['']),
+                'groups' => [],
             ];
         }
 
+        foreach (self::children('', $directories) as $child) {
+            $groups[] = self::branch($child, $pages, $directories);
+        }
+
         return $groups;
+    }
+
+    /**
+     * @param  array<string, list<array{slug: string, title: string, nav: string, navExplicit: bool, order: int|null, file: string}>>  $pages
+     * @param  list<string>  $directories
+     * @return DocGroup
+     */
+    private static function branch(string $directory, array $pages, array $directories): array
+    {
+        $name = str_contains($directory, '/') ? substr($directory, (int) mb_strrpos($directory, '/') + 1) : $directory;
+
+        return [
+            'key' => $directory,
+            'label' => ucfirst(str_replace(['-', '_'], ' ', $name)),
+            'items' => self::items($pages[$directory] ?? []),
+            'groups' => array_map(
+                fn (string $child): array => self::branch($child, $pages, $directories),
+                self::children($directory, $directories),
+            ),
+        ];
+    }
+
+    /**
+     * A folder holding only subfolders has no pages of its own, so it never reaches
+     * `$pages` — walk each path back up so the intermediate levels still exist.
+     *
+     * @param  list<string>  $paths
+     * @return list<string>
+     */
+    private static function directories(array $paths): array
+    {
+        $directories = [];
+
+        foreach ($paths as $path) {
+            $parts = $path === '' ? [] : explode('/', $path);
+
+            for ($depth = 1; $depth <= count($parts); $depth++) {
+                $directories[implode('/', array_slice($parts, 0, $depth))] = true;
+            }
+        }
+
+        return array_keys($directories);
+    }
+
+    /**
+     * @param  list<string>  $directories
+     * @return list<string>
+     */
+    private static function children(string $parent, array $directories): array
+    {
+        $children = array_values(array_filter(
+            $directories,
+            function (string $directory) use ($parent): bool {
+                $at = mb_strrpos($directory, '/');
+
+                return ($at === false ? '' : mb_substr($directory, 0, $at)) === $parent;
+            },
+        ));
+
+        sort($children);
+
+        return $children;
+    }
+
+    /**
+     * @param  list<array{slug: string, title: string, nav: string, navExplicit: bool, order: int|null, file: string}>  $items
+     * @return list<DocItem>
+     */
+    private static function items(array $items): array
+    {
+        $items = self::disambiguate($items);
+
+        usort($items, fn (array $a, array $b): int => [$a['order'] ?? 500, $a['file'] !== 'index.md', $a['nav']]
+            <=> [$b['order'] ?? 500, $b['file'] !== 'index.md', $b['nav']]);
+
+        return array_map(
+            fn (array $item): array => [
+                'slug' => $item['slug'],
+                'title' => $item['title'],
+                'nav' => $item['nav'],
+            ],
+            $items,
+        );
+    }
+
+    /**
+     * `Meta::shorten()` keeps the part of the title before the cut, which is the wrong half
+     * for a folder whose docs all share a prefix — five `Admin panel — …` pages all list as
+     * *Admin panel*. Where that happens, the tail after the cut is the half that distinguishes
+     * them. Front matter always wins.
+     *
+     * @param  list<array{slug: string, title: string, nav: string, navExplicit: bool, order: int|null, file: string}>  $items
+     * @return list<array{slug: string, title: string, nav: string, navExplicit: bool, order: int|null, file: string}>
+     */
+    private static function disambiguate(array $items): array
+    {
+        $counts = array_count_values(array_column($items, 'nav'));
+
+        foreach ($items as $index => $item) {
+            if ($item['navExplicit'] || ($counts[$item['nav']] ?? 0) < 2) {
+                continue;
+            }
+
+            $items[$index]['nav'] = Meta::tail($item['title']) ?: $item['title'];
+        }
+
+        return $items;
     }
 
     /**

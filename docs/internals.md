@@ -22,6 +22,35 @@ useless error "Not a valid Inertia response."
 
 Use the anchored `preg_replace` with the `u` flag that is there now. A test pins the Thai case.
 
+## Nested groups
+
+`DocTree::groups()` returns a **recursive** shape — each group carries `items` (its own pages) and
+`groups` (its subfolders) — so `docs/cart/prices/` renders inside *Cart* rather than beside it as a
+sibling group labelled `Cart/prices`.
+
+Two consequences that are easy to miss when adding a consumer:
+
+- A folder holding only subfolders never appears in the page map, because nothing was ever filed
+  under its path. `DocTree::directories()` walks every path back up so the intermediate level still
+  exists — drop that and `ws2/quotation/` renders at the top level with no parent.
+- Anything that wants a flat list of docs — the search index, the landing-page fallback — must go
+  through `DocTree::flatten()`, which also composes the ` · `-joined group trail. Iterating
+  `$groups[*]['items']` silently skips everything below the first level.
+
+On the client, `locate()` returns the whole trail rather than the leaf group, because the sidebar has
+to expand every ancestor of the current page, and the breadcrumb shows the full path.
+
+## `Meta::tail()` exists because `shorten()` keeps the wrong half
+
+`shorten()` cuts a title at its first ` — ` and keeps the part **before** it, which is right for a
+title naming its own subject and wrong for a folder whose docs all share a prefix: five
+`Admin panel — …` pages all list as *Admin panel*. `DocTree::disambiguate()` detects the collision
+per folder and swaps in `Meta::tail()`, the half after the cut.
+
+It runs **before** the sort, so the sidebar is alphabetical on the label the reader actually sees.
+Front matter always wins — an explicit `nav:` is never rewritten, which is what makes a deliberate
+duplicate possible.
+
 ## Never set mermaid's `fontFamily` or `fontSize`
 
 Mermaid measures a label's width using the configured font *before* the real font paints, so every

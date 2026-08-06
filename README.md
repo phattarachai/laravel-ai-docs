@@ -11,8 +11,8 @@ Render a folder of markdown — your `.ai/documents/` tree, your handbook, your 
 site inside your Laravel app, instead of pushing it to a separate wiki that immediately goes stale.
 
 The files stay where they are, next to the code, versioned with it. The panel mounts at `/docs`, behind **your** auth
-gate, and reads the directory as it is: folders become sidebar groups, `# Heading` becomes the nav label, images sitting
-beside the markdown just work.
+gate, and reads the directory as it is: folders become sidebar groups and nest as deeply as you nested them,
+`# Heading` becomes the nav label, images sitting beside the markdown just work.
 
 ![A doc page with the sidebar tree, a rendered mermaid flowchart and the outline column](https://raw.githubusercontent.com/phattarachai/laravel-ai-docs/main/art/light.png)
 
@@ -175,6 +175,14 @@ flowchart LR
 
 Within a group, pages sort by `order`, then `index.md` first, then nav label. The landing page is `index.md` at the
 root of the docs folder, or the first page of the first group if there is none.
+
+Subfolders nest inside their parent group rather than listing beside it, so `cart/prices/` opens *inside* **Cart**
+and the breadcrumb reads `Cart · Prices`. There is no depth limit.
+
+When two docs in one folder shorten to the same label — five pages titled `Admin panel — …` — the panel switches those
+docs to the half of the title *after* the cut (*Form conventions*, *Table conventions*) rather than listing the same
+word five times. So a collision usually needs no front matter at all; reach for `nav` when you want a label the title
+doesn't contain.
 
 Links between docs are rewritten to panel URLs and navigate through Inertia — including anchors. A relative link that
 points outside the docs folder renders as plain text unless `source_link_base` is set, in which case it becomes a link

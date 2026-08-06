@@ -7,17 +7,14 @@ use Phattarachai\AiDocs\Support\Docs;
 use Phattarachai\AiDocs\Support\DocTree;
 
 it('lists every doc outside the excluded prefixes, and nothing inside them', function (): void {
-    $slugs = array_merge(...array_map(
-        fn (array $group): array => array_column($group['items'], 'slug'),
-        DocTree::groups(),
-    ));
-
-    expect($slugs)->toEqualCanonicalizing([
+    expect(array_column(DocTree::flatten(), 'slug'))->toEqualCanonicalizing([
         'index',
         'links',
         'private',
         'guides/getting-started',
         'guides/labels',
+        'guides/advanced/caching',
+        'guides/advanced/queues',
     ]);
 });
 
@@ -33,6 +30,34 @@ it('groups the root apart from each directory and labels it from the folder name
 
     expect(array_column($groups, 'key'))->toBe(['_root', 'guides'])
         ->and($groups[1]['label'])->toBe('Guides');
+});
+
+it('nests a subfolder under its parent instead of listing it as another top-level group', function (): void {
+    $guides = DocTree::groups()[1];
+    $advanced = $guides['groups'][0];
+
+    expect(array_column($guides['groups'], 'key'))->toBe(['guides/advanced'])
+        ->and($advanced['label'])->toBe('Advanced')
+        ->and(array_column($advanced['items'], 'slug'))
+        ->toBe(['guides/advanced/caching', 'guides/advanced/queues']);
+});
+
+it('walks the nested tree depth first and names each doc its full group trail', function (): void {
+    $flat = DocTree::flatten();
+    $groups = array_column($flat, 'group', 'slug');
+
+    expect($groups['index'])->toBe('')
+        ->and($groups['guides/labels'])->toBe('Guides')
+        ->and($groups['guides/advanced/caching'])->toBe('Guides · Advanced');
+});
+
+it('falls back to the tail of the title when a folder shortens two docs to one nav label', function (): void {
+    // Both are `Guides — …`, which shortens to `Guides` twice; the half after the cut is
+    // the half that tells them apart.
+    $advanced = DocTree::groups()[1]['groups'][0]['items'];
+
+    expect(array_column($advanced, 'nav'))->toBe(['caching', 'queues'])
+        ->and($advanced[0]['title'])->toBe('Guides — caching');
 });
 
 it('lets front matter set the title, the nav label and the order', function (): void {

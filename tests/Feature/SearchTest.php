@@ -15,11 +15,15 @@ it('indexes one entry per servable doc, each split into sections', function (): 
         'private',
         'guides/getting-started',
         'guides/labels',
+        'guides/advanced/caching',
+        'guides/advanced/queues',
     ]);
 
+    $nested = collect($index)->firstWhere('slug', 'guides/advanced/queues');
     $started = collect($index)->firstWhere('slug', 'guides/getting-started');
 
-    expect($started['group'])->toBe('Guides')
+    expect($nested['group'])->toBe('Guides · Advanced')
+        ->and($started['group'])->toBe('Guides')
         ->and($started['sections'])->toHaveCount(3)
         ->and($started['sections'][0])->toHaveKeys(['id', 'heading', 'level', 'text'])
         ->and($started['sections'][0]['heading'])->toBe('Getting started — the five minute version')
@@ -35,6 +39,6 @@ it('carries the body text of a section into its entry', function (): void {
 it('hands the index to a signed-in reader over the endpoint', function (): void {
     $index = actingAs(adUser())->get(route('ai-docs.search'))->assertOk()->json();
 
-    expect($index)->toHaveCount(5)
+    expect($index)->toHaveCount(7)
         ->and($index[0])->toHaveKeys(['slug', 'title', 'group', 'sections']);
 });

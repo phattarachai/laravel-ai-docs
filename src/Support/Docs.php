@@ -49,9 +49,7 @@ final class Docs
             return 'index';
         }
 
-        $groups = DocTree::groups();
-
-        return $groups[0]['items'][0]['slug'] ?? null;
+        return DocTree::flatten()[0]['slug'] ?? null;
     }
 
     public static function media(string $path): ?string

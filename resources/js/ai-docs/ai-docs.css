@@ -254,7 +254,7 @@
   justify-content: space-between;
   gap: 8px;
   width: 100%;
-  padding: 6px 14px;
+  padding: 6px 14px 6px calc(14px + var(--doc-depth, 0) * 12px);
   border: 0;
   background: none;
   color: var(--doc-text);
@@ -263,6 +263,13 @@
   font-weight: 550;
   text-align: left;
   cursor: pointer;
+}
+
+/* A subfolder is a heading inside an open group, so it sits below its parent, not beside it. */
+.doc-acc.sub {
+  color: var(--doc-muted);
+  font-size: 13.5px;
+  font-weight: 500;
 }
 
 .doc-acc:hover {
@@ -281,7 +288,7 @@
 
 .doc-link {
   display: block;
-  padding: 5px 14px 5px 18px;
+  padding: 5px 14px 5px calc(18px + var(--doc-depth, 0) * 12px);
   border-left: 2px solid transparent;
   color: var(--doc-muted);
   font-size: 13.5px;

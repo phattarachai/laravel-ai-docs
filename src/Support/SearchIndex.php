@@ -15,52 +15,41 @@ final class SearchIndex
      */
     public static function build(): array
     {
-        $groups = DocTree::groups();
+        $docs = DocTree::flatten();
 
         if (config('ai-docs.cache') !== true) {
-            return self::assemble($groups);
+            return self::assemble($docs);
         }
 
         return Cache::rememberForever(
-            'ai-docs:search:'.Markdown::version().':'.app()->getLocale().':'.self::signature($groups),
-            fn (): array => self::assemble($groups),
+            'ai-docs:search:'.Markdown::version().':'.app()->getLocale().':'.self::signature($docs),
+            fn (): array => self::assemble($docs),
         );
     }
 
     /**
-     * @param  list<array{key: string, label: string, items: list<array{slug: string, title: string}>}>  $groups
+     * @param  list<array{slug: string, title: string, nav: string, group: string}>  $docs
      * @return list<array{slug: string, title: string, group: string, sections: list<array{id: string, heading: string, level: int, text: string}>}>
      */
-    private static function assemble(array $groups): array
+    private static function assemble(array $docs): array
     {
-        $docs = [];
-
-        foreach ($groups as $group) {
-            foreach ($group['items'] as $item) {
-                $docs[] = [
-                    'slug' => $item['slug'],
-                    'title' => $item['title'],
-                    'group' => $group['label'],
-                    'sections' => Docs::sections($item['slug']),
-                ];
-            }
-        }
-
-        return $docs;
+        return array_map(fn (array $doc): array => [
+            'slug' => $doc['slug'],
+            'title' => $doc['title'],
+            'group' => $doc['group'],
+            'sections' => Docs::sections($doc['slug']),
+        ], $docs);
     }
 
     /**
-     * @param  list<array{key: string, label: string, items: list<array{slug: string, title: string}>}>  $groups
+     * @param  list<array{slug: string, title: string, nav: string, group: string}>  $docs
      */
-    private static function signature(array $groups): string
+    private static function signature(array $docs): string
     {
-        $parts = [];
-
-        foreach ($groups as $group) {
-            foreach ($group['items'] as $item) {
-                $parts[] = $item['slug'].':'.(int) @filemtime(AiDocs::root().'/'.$item['slug'].'.md');
-            }
-        }
+        $parts = array_map(
+            fn (array $doc): string => $doc['slug'].':'.(int) @filemtime(AiDocs::root().'/'.$doc['slug'].'.md'),
+            $docs,
+        );
 
         return sha1(implode('|', $parts));
     }

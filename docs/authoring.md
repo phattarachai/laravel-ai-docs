@@ -114,8 +114,10 @@ order: 10
 `title` sets the page title and browser tab, falling back to the H1 and then the filename. `nav` sets the sidebar
 label, overriding the shortened title. `order` sets the position within the group.
 
-**Reach for a key only when the default lands badly.** The usual cause is a collision — three docs titled
-`Billing — …` all shorten to *Billing* — so check the siblings in the folder before deciding you need one.
+**Reach for a key only when the default lands badly** — which is rarer than it looks, because the panel already handles
+the usual cause. Three docs titled `Billing — …` would all shorten to *Billing*; when that happens the panel takes the
+half of the title *after* the cut instead, so they list as *subscriptions*, *invoicing*, *dunning*. Write `nav` when you
+want a label the title does not contain, not merely to break a tie.
 
 The sort runs in two stages. Groups come first: the root group is always at the top, then every folder in path order.
 Inside a group, pages sort by `order` (a page without one sorts as **500**, so a single `order: 10` lifts one doc to
@@ -124,6 +126,16 @@ the top without renumbering its siblings), then `index.md` before everything els
 Group labels are derived from the directory name and cannot be overridden — the panel uppercases the first letter and
 turns `-` and `_` into spaces, so `ui-kit` renders as *Ui kit*. **The folder name is the only lever you have on a group
 label**, which is a reason to prefer single-word folder names.
+
+## Nesting
+
+A folder inside a folder nests inside its group rather than listing beside it, at any depth. `billing/dunning/` opens
+within **Billing**, and a page there breadcrumbs as `Billing · Dunning`.
+
+That is a rendering guarantee, not an invitation. Everything under "Flat first" still holds: the reader has to open two
+drawers to reach a nested doc rather than one. Nest when a domain genuinely has a sub-domain with several docs of its
+own — a pricing engine inside a cart, one strategy per file — and keep the parent folder's own docs directly in it, so
+the group is never an empty shell holding only more groups.
 
 ## A good tree looks like this
 

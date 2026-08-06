@@ -66,8 +66,9 @@ order: 10                                           # sort within the folder; un
 ---
 ```
 
-Within a group, pages sort by `order`, then `index.md` first, then nav label. The common reason to add a key is a
-collision — three docs titled `Billing — …` all shorten to *Billing*. Check the siblings before deciding you need one.
+Within a group, pages sort by `order`, then `index.md` first, then nav label. Subfolders nest inside their parent group
+rather than beside it, so `billing/dunning/` opens within *Billing*. A collision needs no key — three docs titled
+`Billing — …` list by the half of the title *after* the cut. Write `nav` when you want a label the title lacks.
 
 **Callouts use GitHub's alert syntax**, so the doc renders the same on github.com:
 

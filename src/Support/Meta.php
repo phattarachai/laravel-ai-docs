@@ -15,7 +15,7 @@ final class Meta
     private const array CUTS = [' — ', ' – ', ' (', ': '];
 
     /**
-     * @return array{title: string, nav: string, order: int|null}
+     * @return array{title: string, nav: string, navExplicit: bool, order: int|null}
      */
     public static function read(string $absolute, string $fallback): array
     {
@@ -24,11 +24,13 @@ final class Meta
         [$data, $body] = self::split($head);
 
         $title = self::string($data, 'title') ?: (self::h1($body) ?: $fallback);
+        $nav = self::string($data, 'nav');
         $order = $data['order'] ?? null;
 
         return [
             'title' => $title,
-            'nav' => self::string($data, 'nav') ?: self::shorten($title),
+            'nav' => $nav ?: self::shorten($title),
+            'navExplicit' => $nav !== '',
             'order' => is_numeric($order) ? (int) $order : null,
         ];
     }
@@ -44,6 +46,36 @@ final class Meta
         }
 
         return (string) preg_replace('/[\s\x{2014}\x{2013}\-:(]+$/u', '', $title);
+    }
+
+    /**
+     * @see docs/authoring.md — "Ordering and labels"
+     */
+    public static function tail(string $title): string
+    {
+        $at = null;
+        $cut = '';
+
+        foreach (self::CUTS as $candidate) {
+            $index = mb_strpos($title, $candidate);
+
+            if ($index !== false && $index >= 3 && ($at === null || $index < $at)) {
+                $at = $index;
+                $cut = $candidate;
+            }
+        }
+
+        if ($at === null) {
+            return '';
+        }
+
+        $tail = trim(mb_substr($title, $at + mb_strlen($cut)));
+
+        if ($cut === ' (' && str_ends_with($tail, ')')) {
+            $tail = rtrim(mb_substr($tail, 0, -1));
+        }
+
+        return $tail;
     }
 
     /**
