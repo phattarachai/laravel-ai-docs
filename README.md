@@ -104,6 +104,20 @@ Kill it entirely with `AI_DOCS_ENABLED=false`: no routes are registered at all, 
 labelled from the directory name (`frontend` → `Frontend`, `ui-kit` → `Ui kit`). Root-level pages sit ungrouped at the
 top. There is no sidebar config file to keep in sync — add a file, it appears.
 
+**Panels** — one install can serve several trees. Docs you maintain and task folders you throw away have different
+half-lives, and merging them into one root buries the first under the second. Give each its own panel and you get its
+own URL, sidebar and search index, plus a switcher in the header:
+
+```php
+'panels' => [
+    'docs'  => ['root' => '.ai/documents', 'label' => 'Documents'],
+    'tasks' => ['root' => '.ai/tasks',     'label' => 'Tasks'],
+],
+```
+
+Links resolve across panels, so a task can link to a doc and back. Leave `panels` empty for the single tree built from
+`path` / `root` / `exclude`.
+
 **Search** — `⌘K` opens a palette over a section-level index built server-side and served from `/docs/_search.json`.
 Every heading is its own hit, scored across title, heading and body text, with the matched terms highlighted in a
 snippet. Arrows move, Enter jumps straight to the anchor.
@@ -184,9 +198,10 @@ docs to the half of the title *after* the cut (*Form conventions*, *Table conven
 word five times. So a collision usually needs no front matter at all; reach for `nav` when you want a label the title
 doesn't contain.
 
-Links between docs are rewritten to panel URLs and navigate through Inertia — including anchors. A relative link that
-points outside the docs folder renders as plain text unless `source_link_base` is set, in which case it becomes a link
-to your code host.
+Links between docs are rewritten to panel URLs and navigate through Inertia — including anchors. A link to a *folder*
+lands on whichever page the sidebar lists first under it, so `[#94](../cycle-2/94-billing/)` works without naming a
+file; a folder with no page of its own hands off to the first one below it. A relative link that points outside every
+panel's root renders as plain text unless `source_link_base` is set, in which case it becomes a link to your code host.
 
 How to *organize* the folder — flat-first structure, the `index.md` map, the 500-line rule, how `order` and `nav`
 interact with the folder grouping — is [`docs/authoring.md`](docs/authoring.md). If an agent writes your docs, those
@@ -206,6 +221,7 @@ See [`config/ai-docs.php`](config/ai-docs.php).
 | `redirect_guests_to`  | `login`          | `AI_DOCS_LOGIN_ROUTE`  | route name or URL; `null` 403s guests       |
 | `root`                | `.ai/documents`  | `AI_DOCS_ROOT`         | relative to the project root                |
 | `exclude`             | `[]`             | —                      | path prefixes, matched by whole segment     |
+| `panels`              | `[]`             | —                      | several trees; empty means one              |
 | `tables`              | `scroll`         | `AI_DOCS_TABLES`       | `scroll` or `wrap`; styling only            |
 | `source_link_base`    | `null`           | `AI_DOCS_SOURCE_BASE`  | code-host base URL for out-of-tree links    |
 | `cache`               | `true`           | `AI_DOCS_CACHE`        | render + search cache                       |
@@ -216,6 +232,11 @@ See [`config/ai-docs.php`](config/ai-docs.php).
 
 `exclude` matches whole segments relative to `root`, so `'handbook'` drops the `handbook/` directory while leaving
 `handbook.md` servable. Excluded paths are dropped from the tree, the search index, direct URLs and `_media` alike.
+
+A `panels` entry may set `path` (defaults to the key), `root`, `label` and `exclude`; whatever it omits falls back to
+the top-level key of the same name. Route names gain the panel key — `route('ai-docs.tasks.index')` — while a single
+unnamed panel keeps `route('ai-docs.index')`. Panels are registered longest-path first, so one nested inside another's
+prefix (`docs` and `docs/tasks`) still resolves.
 
 Everything else is a CSS custom property you can override:
 

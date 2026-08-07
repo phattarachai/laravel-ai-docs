@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phattarachai\AiDocs\Support;
 
+use Closure;
 use Phattarachai\AiDocs\AiDocs;
 use SplFileInfo;
 use Symfony\Component\Finder\Finder;
@@ -81,6 +82,52 @@ final class DocTree
     public static function title(string $absolute, string $fallback): string
     {
         return Meta::read($absolute, $fallback)['title'];
+    }
+
+    /**
+     * The page a link to a *folder* should land on: the same doc the sidebar lists first
+     * under it. A folder holding only subfolders hands off to the first of those, so
+     * `[#94](../../cycle-2.11.2/94-sale-hierarchy/)` resolves however deep the docs sit.
+     *
+     * @see docs/authoring.md — "Linking to a folder"
+     */
+    public static function landing(string $directory): ?string
+    {
+        $directory = trim($directory, '/');
+        $absolute = rtrim(AiDocs::root().'/'.$directory, '/');
+
+        if (! is_dir($absolute)) {
+            return null;
+        }
+
+        $items = [];
+
+        foreach ((array) glob($absolute.'/*.md') as $path) {
+            $file = basename((string) $path);
+            $relative = ($directory === '' ? '' : $directory.'/').$file;
+
+            if (! is_file((string) $path) || AiDocs::excluded($relative)) {
+                continue;
+            }
+
+            $items[] = [...Meta::read((string) $path, $file), 'slug' => substr($relative, 0, -3), 'file' => $file];
+        }
+
+        if ($items !== []) {
+            usort($items, self::sorter());
+
+            return (string) $items[0]['slug'];
+        }
+
+        foreach (self::subdirectories($absolute) as $child) {
+            $slug = self::landing(($directory === '' ? '' : $directory.'/').$child);
+
+            if ($slug !== null) {
+                return $slug;
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -181,8 +228,7 @@ final class DocTree
     {
         $items = self::disambiguate($items);
 
-        usort($items, fn (array $a, array $b): int => [$a['order'] ?? 500, $a['file'] !== 'index.md', $a['nav']]
-            <=> [$b['order'] ?? 500, $b['file'] !== 'index.md', $b['nav']]);
+        usort($items, self::sorter());
 
         return array_map(
             fn (array $item): array => [
@@ -216,6 +262,33 @@ final class DocTree
         }
 
         return $items;
+    }
+
+    /**
+     * Explicit `order` wins, then `index.md`, then the nav label. Shared so a folder's
+     * landing page is the same doc the sidebar puts at the top of it.
+     *
+     * @return Closure(array{nav: string, order: int|null, file: string}, array{nav: string, order: int|null, file: string}): int
+     */
+    private static function sorter(): Closure
+    {
+        return fn (array $a, array $b): int => [$a['order'] ?? 500, $a['file'] !== 'index.md', $a['nav']]
+            <=> [$b['order'] ?? 500, $b['file'] !== 'index.md', $b['nav']];
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function subdirectories(string $absolute): array
+    {
+        $children = array_map(
+            fn (string $path): string => basename($path),
+            array_values(array_filter((array) glob($absolute.'/*', GLOB_ONLYDIR), is_string(...))),
+        );
+
+        sort($children);
+
+        return $children;
     }
 
     /**

@@ -27,6 +27,23 @@ return [
     'exclude' => [],
 
     /*
+     | Several trees, each with its own URL, sidebar and search index, and a switcher in
+     | the header. Leave empty for one panel built from `path` / `root` / `exclude` above.
+     |
+     | Each entry may set `path` (defaults to the key), `root`, `label` and `exclude`;
+     | whatever it omits falls back to the top-level key. Route names gain the panel key —
+     | `ai-docs.tasks.index` — while a single unnamed panel keeps `ai-docs.index`.
+     |
+     | Links resolve across panels, so a doc in one tree can link to a doc in another.
+     |
+     |     'panels' => [
+     |         'docs'  => ['root' => '.ai/documents', 'label' => 'Documents'],
+     |         'tasks' => ['root' => '.ai/tasks',     'label' => 'Tasks'],
+     |     ],
+     */
+    'panels' => [],
+
+    /*
      | `scroll` — natural size inside its own box. `wrap` — cells wrap into the column width.
      | Pure client-side styling; the rendered HTML is identical either way.
      */

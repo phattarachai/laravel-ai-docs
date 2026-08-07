@@ -103,6 +103,37 @@
   white-space: nowrap;
 }
 
+/* Sibling trees. Only rendered when there are at least two, so the control never
+   shows a choice of one. */
+.doc-panels {
+  display: flex;
+  flex: none;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 8px;
+  background: var(--doc-code-bg);
+}
+
+.doc-panel {
+  padding: 3px 10px;
+  border-radius: 6px;
+  color: var(--doc-muted);
+  font-size: 13px;
+  font-weight: 550;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.doc-panel:hover {
+  color: var(--doc-text);
+}
+
+.doc-panel.on {
+  background: var(--doc-bg);
+  box-shadow: 0 1px 2px rgb(15 17 22 / 12%);
+  color: var(--doc-text);
+}
+
 .doc-crumb {
   overflow: hidden;
   color: var(--doc-muted);
@@ -1092,6 +1123,11 @@
   }
 
   .doc-crumb {
+    display: none;
+  }
+
+  /* Two things competing for the same narrow row; the switcher is the useful one. */
+  .doc-topinner:has(.doc-panels) .doc-brand {
     display: none;
   }
 }

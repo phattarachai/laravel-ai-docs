@@ -25,6 +25,7 @@ final class AiDocsController
             'brand' => AiDocs::brand(),
             'groups' => DocTree::groups(),
             'page' => $slug === null ? null : Docs::page($slug),
+            'panels' => AiDocs::switcher(),
             'strings' => trans('ai-docs::ui'),
         ]);
     }

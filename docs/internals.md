@@ -40,6 +40,31 @@ Two consequences that are easy to miss when adding a consumer:
 On the client, `locate()` returns the whole trail rather than the leaf group, because the sidebar has
 to expand every ancestor of the current page, and the breadcrumb shows the full path.
 
+## The current panel is a static frame, not a parameter
+
+Every Support class resolves against "the current panel" through `AiDocs::root()` / `url()` /
+`excluded()`. The alternative — threading a panel through `DocTree`, `Docs`, `SearchIndex`, `Links`
+and the media route — touches every signature in the package to serve one feature, so the panel is a
+static instead, pinned per request by the `SetPanel` middleware.
+
+Reading another panel is therefore a frame: `AiDocs::within('tasks', fn () => …)`, which restores the
+previous panel in a `finally`. Three consequences:
+
+- Routes are registered **at boot** from config, so a panel layout cannot be switched on inside a
+  test. `PanelsTestCase` exists for that reason; `config()->set('ai-docs.panels', …)` mid-test
+  changes the trees without changing the routes, which is worse than not working.
+- `AiDocsServiceProvider::register()` resets the static, or one test's panel leaks into the next.
+- Both the render cache and the search cache carry `AiDocs::panelKey()`. Without it two panels
+  holding a doc at the same relative path serve each other's HTML.
+
+`Links` walks *every* panel when it resolves a target, current panel first and then deepest root
+first. Splitting one root into panels must not turn a doc-to-doc link into a link off to the code
+host, and a panel rooted at `.ai/tasks` has to win over one rooted at `.ai`.
+
+Watch for this in the fixtures: `AiDocs::root()` returns a **realpath**, so a `../documents/x.md`
+link is walked in resolved space. The test fixture folders are named after the links pointing at
+them and sit side by side for exactly that reason.
+
 ## `Meta::tail()` exists because `shorten()` keeps the wrong half
 
 `shorten()` cuts a title at its first ` — ` and keeps the part **before** it, which is right for a

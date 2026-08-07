@@ -22,6 +22,13 @@ it('renders the page for a signed-in reader', function (): void {
             ->has('strings'));
 });
 
+it('offers no switcher when there is only one panel', function (): void {
+    actingAs(adUser())
+        ->get(route('ai-docs.index'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->where('panels', []));
+});
+
 it('falls back to the index page when no slug is given', function (): void {
     actingAs(adUser())
         ->get(route('ai-docs.index'))

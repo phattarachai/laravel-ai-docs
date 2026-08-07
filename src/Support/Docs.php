@@ -27,7 +27,7 @@ final class Docs
         return [
             'slug' => substr($relative, 0, -3),
             'title' => DocTree::title($absolute, basename($relative)),
-            'path' => trim((string) config('ai-docs.root'), '/').'/'.$relative,
+            'path' => AiDocs::current()['root'].'/'.$relative,
             'html' => $rendered['html'],
             'toc' => $rendered['toc'],
         ];
@@ -110,6 +110,7 @@ final class Docs
             'ai-docs',
             Markdown::version(),
             app()->getLocale(),
+            AiDocs::panelKey(),
             sha1($relative),
             (int) filemtime($absolute),
         ]);
