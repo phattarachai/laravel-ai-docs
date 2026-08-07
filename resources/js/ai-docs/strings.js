@@ -17,6 +17,10 @@ export const DEFAULT_STRINGS = {
   'nav.pages': 'Pages',
   'nav.outline': 'On this page',
   'nav.panels': 'Sections',
+  'nav.hidePages': 'Hide pages',
+  'nav.showPages': 'Show pages',
+  'nav.hideOutline': 'Hide outline',
+  'nav.showOutline': 'Show outline',
 
   'scheme.toLight': 'Switch to light',
   'scheme.toDark': 'Switch to dark',

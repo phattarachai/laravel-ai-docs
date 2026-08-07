@@ -11,6 +11,10 @@ return [
     'nav.pages' => 'หน้าเอกสาร',
     'nav.outline' => 'หัวข้อในหน้านี้',
     'nav.panels' => 'หมวดเอกสาร',
+    'nav.hidePages' => 'ซ่อนหน้าเอกสาร',
+    'nav.showPages' => 'แสดงหน้าเอกสาร',
+    'nav.hideOutline' => 'ซ่อนหัวข้อ',
+    'nav.showOutline' => 'แสดงหัวข้อ',
 
     'scheme.toLight' => 'สลับเป็นโหมดสว่าง',
     'scheme.toDark' => 'สลับเป็นโหมดมืด',

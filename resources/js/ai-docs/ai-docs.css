@@ -223,6 +223,57 @@
   display: none;
 }
 
+/* Collapsing a column only means anything while it is a column. Below each
+   breakpoint the drawer toggles above already own that job, so these hide.
+   A collapsed column keeps its grid cell at zero width rather than going
+   `display: none` — dropping it re-runs auto-placement and the page lands in
+   the column that just shrank. */
+.doc-panetoggle {
+  display: none;
+}
+
+.doc-panetoggle[aria-pressed='true'] {
+  border-style: dashed;
+}
+
+/* A collapsed column keeps its grid cell at zero width rather than going
+   `display: none` — dropping it re-runs auto-placement and the page lands in
+   the column that just shrank. Which column is out of flow at a given width is
+   the responsive block's business, and it stays that way. */
+@media (min-width: 861px) {
+  .doc-panetoggle.for-nav {
+    display: grid;
+    margin-left: -6px;
+  }
+
+  .doc-root.hide-nav {
+    --doc-nav-w: 0px;
+  }
+
+  .doc-root.hide-nav .doc-nav {
+    overflow: hidden;
+    padding-inline: 0;
+    border-right: 0;
+    visibility: hidden;
+  }
+}
+
+@media (min-width: 1061px) {
+  .doc-panetoggle.for-toc {
+    display: grid;
+  }
+
+  .doc-root.hide-toc {
+    --doc-toc-w: 0px;
+  }
+
+  .doc-root.hide-toc .doc-toc {
+    overflow: hidden;
+    padding-inline: 0;
+    visibility: hidden;
+  }
+}
+
 .doc-burger,
 .doc-burger::before,
 .doc-burger::after {
@@ -1028,6 +1079,15 @@
 .doc-mermaid svg {
   max-width: 100%;
   height: auto;
+}
+
+/* A diagram label is HTML inside the SVG, so the prose rules match it too — and
+   a label restyled after mermaid measured it no longer fits the box that was
+   cut for it. The diagram carries its own typography; see mermaid-theme.js. */
+.doc-mermaid svg :is(p, span, div) {
+  margin: 0;
+  font-size: inherit;
+  line-height: inherit;
 }
 
 .doc-mermaid .doc-mermaid-fallback {
