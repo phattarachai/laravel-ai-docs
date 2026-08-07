@@ -16,6 +16,7 @@ import { createContext, useCallback, useContext } from 'react'
 export const DEFAULT_STRINGS = {
   'nav.pages': 'Pages',
   'nav.outline': 'On this page',
+  'nav.panels': 'Sections',
 
   'scheme.toLight': 'Switch to light',
   'scheme.toDark': 'Switch to dark',

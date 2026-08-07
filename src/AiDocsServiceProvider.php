@@ -9,6 +9,7 @@ use Illuminate\Support\ServiceProvider;
 use Override;
 use Phattarachai\AiDocs\Console\DoctorCommand;
 use Phattarachai\AiDocs\Http\Middleware\Authorize;
+use Phattarachai\AiDocs\Http\Middleware\SetPanel;
 
 /** @see README.md */
 final class AiDocsServiceProvider extends ServiceProvider
@@ -17,6 +18,10 @@ final class AiDocsServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->mergeConfigFrom(__DIR__.'/../config/ai-docs.php', 'ai-docs');
+
+        // The current panel is process state, not request state; a new app instance
+        // starts over so a test never inherits the last one's panel.
+        AiDocs::usePanel(null);
     }
 
     public function boot(): void
@@ -33,14 +38,29 @@ final class AiDocsServiceProvider extends ServiceProvider
         }
     }
 
+    /**
+     * One route group per panel. Longest path first, so a panel nested inside another's
+     * prefix (`docs/tasks` under `docs`) is matched before the parent's catch-all
+     * swallows it — Laravel resolves in registration order.
+     */
     private function registerRoutes(): void
     {
-        Route::group([
-            'domain' => config('ai-docs.domain'),
-            'prefix' => config('ai-docs.path', 'docs'),
-            'middleware' => [...(array) config('ai-docs.middleware', ['web']), Authorize::class],
-            'as' => 'ai-docs.',
-        ], fn () => $this->loadRoutesFrom(__DIR__.'/../routes/web.php'));
+        $panels = AiDocs::panels();
+
+        uasort($panels, fn (array $a, array $b): int => mb_strlen($b['path']) <=> mb_strlen($a['path']));
+
+        foreach ($panels as $panel) {
+            Route::group([
+                'domain' => config('ai-docs.domain'),
+                'prefix' => $panel['path'],
+                'middleware' => [
+                    ...(array) config('ai-docs.middleware', ['web']),
+                    SetPanel::class.':'.$panel['key'],
+                    Authorize::class,
+                ],
+                'as' => $panel['key'] === AiDocs::DEFAULT_PANEL ? 'ai-docs.' : 'ai-docs.'.$panel['key'].'.',
+            ], fn () => $this->loadRoutesFrom(__DIR__.'/../routes/web.php'));
+        }
     }
 
     private function registerPublishing(): void

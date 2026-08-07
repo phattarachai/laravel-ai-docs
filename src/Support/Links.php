@@ -24,12 +24,10 @@ final class Links
         }
 
         $absolute = self::normalize(AiDocs::root().'/'.ltrim($docDir.'/'.explode('#', $url)[0], '/'));
-        $relative = self::under($absolute, AiDocs::root());
-        $extension = mb_strtolower(pathinfo($absolute, PATHINFO_EXTENSION));
+        $media = self::media($absolute);
 
-        if ($relative !== null && in_array($extension, self::MEDIA, strict: true)
-            && ! AiDocs::excluded($relative) && is_file($absolute)) {
-            $image->setUrl(AiDocs::url('_media/'.$relative));
+        if ($media !== null) {
+            $image->setUrl($media);
 
             return;
         }
@@ -58,16 +56,100 @@ final class Links
         [$path, $fragment] = array_pad(explode('#', $url, 2), 2, '');
 
         $absolute = self::normalize(AiDocs::root().'/'.ltrim($docDir.'/'.$path, '/'));
-        $relative = self::under($absolute, AiDocs::root());
+        $target = self::target($absolute);
 
-        if ($relative !== null && str_ends_with($relative, '.md')
-            && ! AiDocs::excluded($relative) && is_file($absolute)) {
-            $link->setUrl(AiDocs::url(substr($relative, 0, -3)).($fragment === '' ? '' : '#'.$fragment));
+        if ($target !== null) {
+            $link->setUrl($target.($fragment === '' ? '' : '#'.$fragment));
 
             return;
         }
 
         self::outside($link, $absolute);
+    }
+
+    /**
+     * The `_media` URL of an in-tree image, served by whichever panel holds it.
+     */
+    private static function media(string $absolute): ?string
+    {
+        if (! in_array(mb_strtolower(pathinfo($absolute, PATHINFO_EXTENSION)), self::MEDIA, strict: true)
+            || ! is_file($absolute)) {
+            return null;
+        }
+
+        foreach (self::candidates() as $panel) {
+            $relative = self::under($absolute, AiDocs::rootOf($panel));
+
+            if ($relative === null || AiDocs::within($panel['key'], fn (): bool => AiDocs::excluded($relative))) {
+                continue;
+            }
+
+            return AiDocs::urlOf($panel, '_media/'.$relative);
+        }
+
+        return null;
+    }
+
+    /**
+     * Where a relative link lands, or null if it leaves the panels entirely. Every panel
+     * is a candidate, not just the one being read — splitting the docs across panels must
+     * not turn a doc-to-doc link into a link off to the code host.
+     */
+    private static function target(string $absolute): ?string
+    {
+        foreach (self::candidates() as $panel) {
+            $relative = self::under($absolute, AiDocs::rootOf($panel));
+
+            if ($relative === null) {
+                continue;
+            }
+
+            $url = AiDocs::within($panel['key'], fn (): ?string => self::resolve($absolute, $relative));
+
+            if ($url !== null) {
+                return $url;
+            }
+        }
+
+        return null;
+    }
+
+    private static function resolve(string $absolute, string $relative): ?string
+    {
+        if (AiDocs::excluded($relative)) {
+            return null;
+        }
+
+        if (str_ends_with($relative, '.md')) {
+            return is_file($absolute) ? AiDocs::url(substr($relative, 0, -3)) : null;
+        }
+
+        // A *link* to a screenshot, not an embed of it. Serving it through `_media` keeps
+        // the reader in the panel instead of bouncing them to the code host.
+        if (in_array(mb_strtolower(pathinfo($relative, PATHINFO_EXTENSION)), self::MEDIA, strict: true)) {
+            return is_file($absolute) ? AiDocs::url('_media/'.$relative) : null;
+        }
+
+        $slug = is_dir($absolute) ? DocTree::landing($relative) : null;
+
+        return $slug === null ? null : AiDocs::url($slug);
+    }
+
+    /**
+     * The panel being read first, then the deepest roots — so a panel rooted at
+     * `.ai/tasks` claims the link before one rooted at `.ai`.
+     *
+     * @return list<array{key: string, path: string, root: string, label: string, exclude: list<string>}>
+     */
+    private static function candidates(): array
+    {
+        $panels = AiDocs::panels();
+        $current = AiDocs::panelKey();
+
+        uasort($panels, fn (array $a, array $b): int => [$b['key'] === $current, mb_strlen($b['root'])]
+            <=> [$a['key'] === $current, mb_strlen($a['root'])]);
+
+        return array_values($panels);
     }
 
     private static function outside(Link $link, string $absolute): void

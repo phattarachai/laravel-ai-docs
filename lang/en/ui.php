@@ -14,6 +14,7 @@ declare(strict_types=1);
 return [
     'nav.pages' => 'Pages',
     'nav.outline' => 'On this page',
+    'nav.panels' => 'Sections',
 
     'scheme.toLight' => 'Switch to light',
     'scheme.toDark' => 'Switch to dark',

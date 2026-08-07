@@ -127,6 +127,15 @@ Group labels are derived from the directory name and cannot be overridden — th
 turns `-` and `_` into spaces, so `ui-kit` renders as *Ui kit*. **The folder name is the only lever you have on a group
 label**, which is a reason to prefer single-word folder names.
 
+## Linking to a folder
+
+A link may point at a directory rather than a file — `[#94](../cycle-2/94-billing/)` — and it lands on whichever page
+the sidebar lists first under that folder, by the same rule as above: `order`, then `index.md`, then nav label. A folder
+with no page of its own hands off to the first page in the first subfolder below it.
+
+So the doc a folder link resolves to is a consequence of how the folder is ordered, not a separate thing to configure.
+When it matters which page a reader arrives on, that folder wants an `index.md`.
+
 ## Nesting
 
 A folder inside a folder nests inside its group rather than listing beside it, at any depth. `billing/dunning/` opens

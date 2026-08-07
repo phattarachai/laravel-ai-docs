@@ -1,5 +1,5 @@
 import { memo, useCallback, useEffect, useRef, useState } from 'react'
-import { router } from '@inertiajs/react'
+import { Link, router } from '@inertiajs/react'
 
 import './ai-docs.css'
 import './highlight.css'
@@ -13,6 +13,7 @@ import { readScheme, writeScheme } from './scheme'
 import { DEFAULT_STRINGS, StringsContext, translate } from './strings'
 
 const NO_GROUPS = []
+const NO_PANELS = []
 
 function SunIcon() {
   return (
@@ -99,11 +100,13 @@ const DocProse = memo(function DocProse({ html, innerRef }) {
  * @param {string} base panel root URL
  * @param {{name: string, accent: string, url: string, logo: string|null, tables: 'wrap'|'scroll'}} brand
  * @param {Array<{key: string, label: string, items: Array<{slug: string, title: string, nav: string}>, groups: Array<object>}>} groups nested; `groups` recurses
+ * @param {Array<{key: string, label: string, url: string, current: boolean}>} panels sibling trees; empty when there is only one
  * @param {Record<string, string>|undefined} strings copy overrides, from `trans('ai-docs::ui')`
  * @param {{slug: string, title: string, path: string, html: string, toc: Array<{id: string, text: string, level: number}>}|null} page
  */
-export default function AiDocs({ base = '/docs', brand, groups, page = null, strings }) {
+export default function AiDocs({ base = '/docs', brand, groups, page = null, panels, strings }) {
   const tree = groups ?? NO_GROUPS
+  const sections = panels ?? NO_PANELS
   const name = brand?.name ?? 'Docs'
   const mode = brand?.tables === 'scroll' ? 'scroll' : 'wrap'
   // One slot, so the two drawers can never be open at once on a phone.
@@ -191,7 +194,6 @@ export default function AiDocs({ base = '/docs', brand, groups, page = null, str
       return
     }
 
-    const root = String(base).replace(/\/+$/, '')
     const url = new URL(anchor.getAttribute('href'), window.location.href)
 
     if (anchor.classList.contains('doc-anchor')) {
@@ -204,7 +206,12 @@ export default function AiDocs({ base = '/docs', brand, groups, page = null, str
       return
     }
 
-    if (url.pathname !== root && !url.pathname.startsWith(`${root}/`)) {
+    // A cross-panel link is still our own page, so keep it on the Inertia side too.
+    const roots = (sections.length > 0 ? sections.map((section) => section.url) : [base]).map((each) =>
+      String(each).replace(/\/+$/, ''),
+    )
+
+    if (!roots.some((root) => url.pathname === root || url.pathname.startsWith(`${root}/`))) {
       return
     }
 
@@ -240,6 +247,21 @@ export default function AiDocs({ base = '/docs', brand, groups, page = null, str
               )}
               <span className="doc-brand">{name}</span>
             </a>
+
+            {sections.length > 0 && (
+              <nav className="doc-panels" aria-label={t('nav.panels')}>
+                {sections.map((section) => (
+                  <Link
+                    key={section.key}
+                    href={section.url}
+                    className={`doc-panel${section.current ? ' on' : ''}`}
+                    aria-current={section.current ? 'page' : undefined}
+                  >
+                    {section.label}
+                  </Link>
+                ))}
+              </nav>
+            )}
 
             {page && (
               <span className="doc-crumb">

@@ -99,13 +99,22 @@ abstract class TestCase extends Orchestra
     }
 
     /**
-     * Point `<testbench>/.ai/documents` at `tests/Fixtures/docs`. Idempotent, and
+     * Point `<testbench>/.ai/documents` at `tests/Fixtures/documents`. Idempotent, and
      * self-healing when `composer install` wipes the skeleton.
+     *
+     * The fixture folders are named after the links that point at them, and sit side by
+     * side, because `AiDocs::root()` resolves symlinks: a `../documents/x.md` link is
+     * walked in *resolved* space, so the fixtures have to be siblings the way a real
+     * `.ai/` tree is.
      */
-    private function linkFixtures(string $basePath): void
+    protected function linkFixtures(string $basePath): void
     {
-        $link = $basePath.'/.ai/documents';
-        $target = __DIR__.'/Fixtures/docs';
+        $this->link($basePath, 'documents', __DIR__.'/Fixtures/documents');
+    }
+
+    protected function link(string $basePath, string $name, string $target): void
+    {
+        $link = $basePath.'/.ai/'.$name;
 
         if (is_link($link) && readlink($link) === $target) {
             return;

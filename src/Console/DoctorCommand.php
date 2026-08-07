@@ -25,15 +25,20 @@ final class DoctorCommand extends Command
             ? null
             : 'ai-docs.enabled is false, so no routes are registered.');
 
-        $failures += $this->check('Routes registered', fn (): ?string => Route::has('ai-docs.index')
-            ? null
-            : 'Route [ai-docs.index] is missing.');
+        $failures += $this->check('Routes registered', fn (): ?string => $this->routes());
 
         $failures += $this->check('Access gate', fn (): ?string => AiDocs::hasGate()
             ? null
             : 'No AiDocs::auth() callback is registered, so every request is refused.');
 
-        $failures += $this->check('Docs root', fn (): ?string => $this->root());
+        foreach (AiDocs::panels() as $panel) {
+            $label = count(AiDocs::panels()) > 1 ? "Docs root · {$panel['key']}" : 'Docs root';
+
+            $failures += $this->check($label, fn (): ?string => AiDocs::within(
+                $panel['key'],
+                fn (): ?string => $this->root(),
+            ));
+        }
 
         $failures += $this->check('Inertia page published', fn (): ?string => file_exists(resource_path('js/pages/AiDocs.jsx'))
             ? null
@@ -82,6 +87,27 @@ final class DoctorCommand extends Command
         return 0;
     }
 
+    private function routes(): ?string
+    {
+        $missing = array_values(array_filter(
+            array_keys(AiDocs::panels()),
+            fn (string $key): bool => ! Route::has(self::routeName($key)),
+        ));
+
+        return $missing === []
+            ? null
+            : 'Missing route(s): '.implode(', ', array_map(self::routeName(...), $missing)).'.';
+    }
+
+    private static function routeName(string $panel): string
+    {
+        return $panel === AiDocs::DEFAULT_PANEL ? 'ai-docs.index' : "ai-docs.{$panel}.index";
+    }
+
+    /**
+     * Counts the whole tree, not the first level — `groups()` nests, so summing
+     * `items` alone stops at the top folders.
+     */
     private function root(): ?string
     {
         $root = AiDocs::root();
@@ -90,13 +116,13 @@ final class DoctorCommand extends Command
             return "{$root} does not exist — set ai-docs.root to your markdown folder.";
         }
 
-        $pages = array_sum(array_map(fn (array $group): int => count($group['items']), DocTree::groups()));
+        $pages = count(DocTree::flatten());
 
         if ($pages === 0) {
             return "{$root} holds no servable .md file.";
         }
 
-        $this->line("  <fg=gray>{$root} · {$pages} pages</>");
+        $this->line('  <fg=gray>'.AiDocs::url()." · {$root} · {$pages} pages</>");
 
         return null;
     }

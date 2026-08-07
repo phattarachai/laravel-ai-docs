@@ -22,7 +22,8 @@ final class SearchIndex
         }
 
         return Cache::rememberForever(
-            'ai-docs:search:'.Markdown::version().':'.app()->getLocale().':'.self::signature($docs),
+            'ai-docs:search:'.Markdown::version().':'.app()->getLocale().':'.AiDocs::panelKey()
+                .':'.self::signature($docs),
             fn (): array => self::assemble($docs),
         );
     }

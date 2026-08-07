@@ -10,6 +10,7 @@ declare(strict_types=1);
 return [
     'nav.pages' => 'หน้าเอกสาร',
     'nav.outline' => 'หัวข้อในหน้านี้',
+    'nav.panels' => 'หมวดเอกสาร',
 
     'scheme.toLight' => 'สลับเป็นโหมดสว่าง',
     'scheme.toDark' => 'สลับเป็นโหมดมืด',
