@@ -9,6 +9,7 @@ import { DocSearch } from './DocSearch'
 import { DocToc } from './DocToc'
 import { DocZoom } from './DocZoom'
 import { useMermaid } from './Mermaid'
+import { readPanes, writePanes } from './panes'
 import { readScheme, writeScheme } from './scheme'
 import { DEFAULT_STRINGS, StringsContext, translate } from './strings'
 
@@ -50,6 +51,20 @@ function OutlineIcon() {
         stroke="currentColor"
         strokeWidth="1.4"
         strokeLinecap="round"
+      />
+    </svg>
+  )
+}
+
+/** @param {{side: 'left'|'right'}} props which edge the column sits on */
+function PanelIcon({ side }) {
+  return (
+    <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <rect x="2" y="3" width="12" height="10" rx="2" stroke="currentColor" strokeWidth="1.3" />
+      <path
+        d={side === 'left' ? 'M6.2 3v10' : 'M9.8 3v10'}
+        stroke="currentColor"
+        strokeWidth="1.3"
       />
     </svg>
   )
@@ -111,6 +126,8 @@ export default function AiDocs({ base = '/docs', brand, groups, page = null, pan
   const mode = brand?.tables === 'scroll' ? 'scroll' : 'wrap'
   // One slot, so the two drawers can never be open at once on a phone.
   const [drawer, setDrawer] = useState(null)
+  // Independent of `drawer`: this is the wide-screen column, not the phone overlay.
+  const [panes, setPanes] = useState(readPanes)
   const [scheme, setScheme] = useState(readScheme)
   const [finding, setFinding] = useState(false)
   const [zoom, setZoom] = useState(null)
@@ -165,6 +182,13 @@ export default function AiDocs({ base = '/docs', brand, groups, page = null, pan
 
   const toggle = (which) => setDrawer((current) => (current === which ? null : which))
 
+  const collapse = (which) => {
+    const next = { ...panes, [which]: !panes[which] }
+
+    setPanes(next)
+    writePanes(next)
+  }
+
   const copyPath = async () => {
     if (await copyText(page.path)) {
       flash(t('page.pathCopied'))
@@ -207,8 +231,8 @@ export default function AiDocs({ base = '/docs', brand, groups, page = null, pan
     }
 
     // A cross-panel link is still our own page, so keep it on the Inertia side too.
-    const roots = (sections.length > 0 ? sections.map((section) => section.url) : [base]).map((each) =>
-      String(each).replace(/\/+$/, ''),
+    const roots = (sections.length > 0 ? sections.map((section) => section.url) : [base]).map(
+      (each) => String(each).replace(/\/+$/, ''),
     )
 
     if (!roots.some((root) => url.pathname === root || url.pathname.startsWith(`${root}/`))) {
@@ -224,7 +248,9 @@ export default function AiDocs({ base = '/docs', brand, groups, page = null, pan
   return (
     <StringsContext.Provider value={strings ?? DEFAULT_STRINGS}>
       <div
-        className={`doc-root mode-${mode} scheme-${scheme}${drawer ? ` drawer-${drawer}` : ''}`}
+        className={`doc-root mode-${mode} scheme-${scheme}${drawer ? ` drawer-${drawer}` : ''}${
+          panes.nav ? ' hide-nav' : ''
+        }${panes.toc ? ' hide-toc' : ''}`}
         style={{ '--doc-accent': brand?.accent }}
       >
         <header className="doc-top">
@@ -237,6 +263,17 @@ export default function AiDocs({ base = '/docs', brand, groups, page = null, pan
               aria-label={t('nav.pages')}
             >
               <span className="doc-burger" />
+            </button>
+
+            <button
+              type="button"
+              className="doc-iconbtn doc-panetoggle for-nav"
+              onClick={() => collapse('nav')}
+              aria-pressed={panes.nav}
+              aria-label={panes.nav ? t('nav.showPages') : t('nav.hidePages')}
+              title={panes.nav ? t('nav.showPages') : t('nav.hidePages')}
+            >
+              <PanelIcon side="left" />
             </button>
 
             <a className="doc-home" href={brand?.url || '/'}>
@@ -278,15 +315,28 @@ export default function AiDocs({ base = '/docs', brand, groups, page = null, pan
               </button>
 
               {hasOutline && (
-                <button
-                  type="button"
-                  className="doc-iconbtn doc-toctoggle"
-                  onClick={() => toggle('toc')}
-                  aria-expanded={drawer === 'toc'}
-                  aria-label={t('nav.outline')}
-                >
-                  <OutlineIcon />
-                </button>
+                <>
+                  <button
+                    type="button"
+                    className="doc-iconbtn doc-panetoggle for-toc"
+                    onClick={() => collapse('toc')}
+                    aria-pressed={panes.toc}
+                    aria-label={panes.toc ? t('nav.showOutline') : t('nav.hideOutline')}
+                    title={panes.toc ? t('nav.showOutline') : t('nav.hideOutline')}
+                  >
+                    <PanelIcon side="right" />
+                  </button>
+
+                  <button
+                    type="button"
+                    className="doc-iconbtn doc-toctoggle"
+                    onClick={() => toggle('toc')}
+                    aria-expanded={drawer === 'toc'}
+                    aria-label={t('nav.outline')}
+                  >
+                    <OutlineIcon />
+                  </button>
+                </>
               )}
               <button
                 type="button"

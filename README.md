@@ -118,6 +118,10 @@ own URL, sidebar and search index, plus a switcher in the header:
 Links resolve across panels, so a task can link to a doc and back. Leave `panels` empty for the single tree built from
 `path` / `root` / `exclude`.
 
+**Collapsing a column** — the header carries a toggle for each side column: the page tree on the left, the outline on
+the right. Collapse either to give a wide table or diagram the whole width; the choice is remembered per browser. The
+toggles appear only above the width where that column exists — narrower than that, it is already a drawer.
+
 **Search** — `⌘K` opens a palette over a section-level index built server-side and served from `/docs/_search.json`.
 Every heading is its own hit, scored across title, heading and body text, with the matched terms highlighted in a
 snippet. Arrows move, Enter jumps straight to the anchor.

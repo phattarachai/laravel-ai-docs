@@ -1,4 +1,39 @@
 /** see README.md — "Mermaid" */
+
+/**
+ * Keep in sync with `.doc-root { font-family }` in ai-docs.css.
+ *
+ * It cannot be read from a custom property: mermaid measures every label in a
+ * throwaway container under `<body>`, outside `.doc-root`, where a property
+ * defined on `.doc-root` does not resolve. Mermaid's own default — Trebuchet —
+ * carries no Thai glyphs, so Thai fell back to a face with taller ink than the
+ * line box it was measured in and lost its below-vowels.
+ */
+const FONT = "'Instrument Sans', 'Noto Sans Thai', system-ui, sans-serif"
+
+/**
+ * Labels are HTML in a `<foreignObject>`, which clips whatever overflows it.
+ * Mermaid sizes that box from a measure pass in its own container and then
+ * hands the SVG to us, where `.doc-prose p` and friends restyle the same text —
+ * bigger than the box it was cut for, so the tail of a line goes missing.
+ *
+ * These rules ship inside the SVG's own `<style>`, which travels with it, so
+ * the measure pass and the final render agree on the numbers. `!important` is
+ * load-bearing twice over: mermaid writes line-height and white-space inline,
+ * and the host page's prose rules are more specific than a bare `.nodeLabel`.
+ */
+const LABEL_CSS = `
+  foreignObject { overflow: visible; }
+  foreignObject div,
+  foreignObject span,
+  foreignObject p {
+    margin: 0 !important;
+    font-family: ${FONT} !important;
+    font-size: 16px !important;
+    line-height: 1.7 !important;
+  }
+  foreignObject > div { white-space: normal !important; }`
+
 const VARIABLES = {
   light: {
     background: '#ffffff',
@@ -74,8 +109,12 @@ export function themeFor(scheme) {
     startOnLoad: false,
     securityLevel: 'strict',
     theme: 'base',
-    themeVariables: VARIABLES[key],
+    // Also reaches the throwaway measure container and any plain SVG `<text>`,
+    // which `LABEL_CSS` — scoped to `<foreignObject>` — does not.
+    fontFamily: FONT,
+    themeVariables: { ...VARIABLES[key], fontFamily: FONT, fontSize: '16px' },
     themeCSS: `
+      ${LABEL_CSS}
       .edgePath path { stroke-width: 1.5px; }
       .cluster rect { rx: 8px; ry: 8px; }
       .node rect, .node polygon, .node circle, .node path { stroke-width: 1.2px; }
@@ -88,7 +127,16 @@ export function themeFor(scheme) {
         color: ${TONES[key].decision[2]};
       }
       ${tones}`,
-    flowchart: { curve: 'basis', nodeSpacing: 44, rankSpacing: 54, padding: 12, useMaxWidth: true },
+    // `wrappingWidth` is the label's max-width, and mermaid's 200 is tight for a
+    // sentence — a doc's nodes read as prose, not as one-word states.
+    flowchart: {
+      curve: 'basis',
+      nodeSpacing: 44,
+      rankSpacing: 54,
+      padding: 12,
+      wrappingWidth: 320,
+      useMaxWidth: true,
+    },
     sequence: { useMaxWidth: true },
   }
 }
