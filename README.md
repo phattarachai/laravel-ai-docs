@@ -30,8 +30,8 @@ person appears in them.</sub>
   plain text rather than breaking the page.
 - **An access gate.** There is no default. Until you register one, every request is refused.
 
-**No Tailwind, and no `@source` line.** Unlike `laravel-db-console`, this panel ships plain CSS scoped under
-`.doc-root`, imported by the module itself — so it renders correctly in a host with any CSS setup, or none.
+**No Tailwind, and no `@source` line.** Like its sibling `laravel-db-console`, this panel ships plain CSS scoped
+under `.doc-root`, imported by the module itself — so it renders correctly in a host with any CSS setup, or none.
 
 Run `php artisan ai-docs:doctor` at any point: it checks the routes, the gate, the docs root, the published page, the
 Vite alias and `mermaid`, and tells you which one is missing.
