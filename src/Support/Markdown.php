@@ -130,6 +130,7 @@ final class Markdown
 
             if ($node instanceof Image) {
                 Links::image($node, $docDir);
+                self::printSize($node);
             }
 
             if ($node instanceof BlockQuote) {
@@ -140,6 +141,25 @@ final class Markdown
                 self::collect($sections, $node->getLiteral());
             }
         }
+    }
+
+    /**
+     * A `print-70` image title is a print directive, not a tooltip: turn it into
+     * the wrapper class and drop the title so nothing hovers on screen.
+     */
+    private static function printSize(Image $image): void
+    {
+        $class = PrintSize::classFor($image->getTitle());
+
+        if ($class === null) {
+            return;
+        }
+
+        $attributes = (array) $image->data->get('attributes');
+        $attributes['class'] = trim(($attributes['class'] ?? '').' '.$class);
+
+        $image->data->set('attributes', $attributes);
+        $image->setTitle(null);
     }
 
     private static function alert(BlockQuote $quote): void

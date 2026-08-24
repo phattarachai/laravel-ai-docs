@@ -1215,7 +1215,8 @@
   .doc-toc,
   .doc-scrim,
   .doc-copypath,
-  .doc-prose .doc-anchor {
+  .doc-prose .doc-anchor,
+  .doc-prose hr {
     display: none !important;
   }
 
@@ -1304,6 +1305,60 @@
   .doc-prose img,
   .doc-mermaid {
     break-inside: avoid;
+  }
+
+  /* Cap tall images and diagrams to the printable height of one A4 page (~261mm
+     of usable height inside the 18mm margins; 244mm leaves room to share a page
+     with a heading). An oversized diagram then scales down to fit one page —
+     preserving its aspect ratio — instead of overflowing or forcing a near-blank
+     page. `break-inside: avoid` above still keeps each one whole. */
+  .doc-prose img,
+  .doc-mermaid svg {
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: 200mm;
+    object-fit: contain;
+  }
+
+  /* Let a scaled diagram breathe to the page edge rather than clip in its own
+     scroll box, and centre it in the width it no longer fills. */
+  .doc-mermaid {
+    overflow: visible;
+  }
+
+  /* Per-element opt-in: `![alt](img "print-70")` or a ```mermaid print-70``` fence
+     caps that one image or diagram to ~N% of a page instead of the 200mm default
+     — smaller for one stranded under a heading, or `print-100` to leave a big one
+     at full size. @see README.md */
+  .doc-prose img.doc-print-50,
+  .doc-mermaid.doc-print-50 svg {
+    max-height: 132mm;
+  }
+
+  .doc-prose img.doc-print-60,
+  .doc-mermaid.doc-print-60 svg {
+    max-height: 158mm;
+  }
+
+  .doc-prose img.doc-print-70,
+  .doc-mermaid.doc-print-70 svg {
+    max-height: 185mm;
+  }
+
+  .doc-prose img.doc-print-80,
+  .doc-mermaid.doc-print-80 svg {
+    max-height: 211mm;
+  }
+
+  .doc-prose img.doc-print-90,
+  .doc-mermaid.doc-print-90 svg {
+    max-height: 238mm;
+  }
+
+  .doc-prose img.doc-print-100,
+  .doc-mermaid.doc-print-100 svg {
+    max-height: none;
   }
 
   /* A heading must not be stranded as the last line of a page. */

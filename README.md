@@ -154,6 +154,22 @@ with no server-side dependency. A `@media print` sheet drops the top bar, both r
 scheme back to ink-on-paper, and keeps code blocks, tables and diagrams from splitting across a page — and because the
 whole document already lives in the DOM, the export is the entire page, mermaid diagrams and all, not just the viewport.
 
+A tall image or diagram is scaled down to fit one page. When one lands awkwardly — stranded under a heading with a page
+of white space above it — size that _one_ element for print without touching the rest: add a `print-NN` keyword, where
+`NN` is a rough percent of a page (`50`, `60`, `70`, `80`, `90`, or `100` to leave it at full size).
+
+````markdown
+```mermaid print-70
+flowchart TD
+  A --> B
+```
+
+![Sequence of the retry path](retry.png "print-60")
+````
+
+On a diagram it is a second word in the fence info string; on an image it goes in the title slot (and is stripped, so
+it never shows as a tooltip). It only affects print — on screen both render full size. Any other value is ignored.
+
 **Layout** — three columns (nav · prose · outline) that collapse into drawers on a phone, a scroll-spy outline, and a
 light/dark toggle remembered in `localStorage`. The scheme lives on `.doc-root`, never on `<html>`, so the panel never
 fights the host app's own theme state.
