@@ -152,13 +152,19 @@ final class AiDocs
     }
 
     /**
+     * A root-relative path — a pathname, never a full URL, because the React client
+     * treats it as one (active-link matching against `location.pathname`, Inertia
+     * visits). Resolved through Laravel's `url()` so a subfolder deploy (the app
+     * served from `/etax/public`, say) is folded into the path; at the domain root
+     * this is still just `/docs`.
+     *
      * @param  Panel  $panel
      */
     public static function urlOf(array $panel, string $slug = ''): string
     {
-        $base = '/'.$panel['path'];
+        $path = $slug === '' ? $panel['path'] : $panel['path'].'/'.$slug;
 
-        return $slug === '' ? $base : rtrim($base, '/').'/'.$slug;
+        return parse_url(url($path), PHP_URL_PATH) ?: '/'.ltrim($path, '/');
     }
 
     /**
