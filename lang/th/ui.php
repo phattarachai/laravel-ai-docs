@@ -30,6 +30,7 @@ return [
     'page.copyPath' => 'คัดลอก :path',
     'page.pathCopied' => 'คัดลอก path แล้ว',
     'page.linkCopied' => 'คัดลอกลิงก์แล้ว',
+    'page.print' => 'พิมพ์ / บันทึกเป็น PDF',
 
     'zoom.open' => 'เต็มจอ',
     'zoom.close' => 'Esc',

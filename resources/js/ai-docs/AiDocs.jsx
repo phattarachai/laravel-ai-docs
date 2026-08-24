@@ -100,6 +100,29 @@ function CopyIcon() {
   )
 }
 
+function PrintIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <path d="M4.6 6V2.6h6.8V6" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
+      <rect
+        x="4.6"
+        y="9.4"
+        width="6.8"
+        height="4"
+        stroke="currentColor"
+        strokeWidth="1.3"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M4.6 6H3.4A1.4 1.4 0 0 0 2 7.4v3A1.4 1.4 0 0 0 3.4 11.8h1.2M11.4 6h1.2A1.4 1.4 0 0 1 14 7.4v3a1.4 1.4 0 0 1-1.4 1.4h-1.2"
+        stroke="currentColor"
+        strokeWidth="1.3"
+        strokeLinecap="round"
+      />
+    </svg>
+  )
+}
+
 /**
  * see docs/internals.md — "DocProse is memoized"
  *
@@ -337,6 +360,17 @@ export default function AiDocs({ base = '/docs', brand, groups, page = null, pan
                     <OutlineIcon />
                   </button>
                 </>
+              )}
+              {page && (
+                <button
+                  type="button"
+                  className="doc-iconbtn"
+                  onClick={() => window.print()}
+                  aria-label={t('page.print')}
+                  title={t('page.print')}
+                >
+                  <PrintIcon />
+                </button>
               )}
               <button
                 type="button"

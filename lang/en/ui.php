@@ -34,6 +34,7 @@ return [
     'page.copyPath' => 'Copy :path',
     'page.pathCopied' => 'Path copied',
     'page.linkCopied' => 'Link copied',
+    'page.print' => 'Print / Save as PDF',
 
     'zoom.open' => 'Full screen',
     'zoom.close' => 'Esc',

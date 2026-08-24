@@ -24,7 +24,13 @@
   min-height: 100vh;
   background: var(--doc-bg);
   color: var(--doc-text);
-  font-family: 'Instrument Sans', 'Noto Sans Thai', system-ui, sans-serif;
+  /* Latin leads with Instrument Sans; Thai glyphs it lacks fall to a looped
+     face — Sukhumvit Set on macOS, Leelawadee UI on Windows — before the
+     loopless Noto and the host's own UI font. None are shipped: the panel is a
+     guest and loads no webfont, so this is a preference over what's installed. */
+  font-family:
+    'Instrument Sans', 'Sukhumvit Set', 'Leelawadee UI', 'Noto Sans Thai Looped', 'Noto Sans Thai',
+    system-ui, sans-serif;
   font-size: 16px;
   line-height: 1.75;
   -webkit-font-smoothing: antialiased;
@@ -1189,5 +1195,131 @@
   /* Two things competing for the same narrow row; the switcher is the useful one. */
   .doc-topinner:has(.doc-panels) .doc-brand {
     display: none;
+  }
+}
+
+/* ---- print ------------------------------------------------------------ */
+
+@page {
+  margin: 18mm 16mm;
+}
+
+/* "Save as PDF" prints the document alone: the top bar, both rails and every
+   on-screen control drop out, and the dark scheme is forced back to ink-on-paper
+   so a night-mode reader still gets a clean sheet. The whole page already lives
+   in the DOM, so this captures the entire document — not just the viewport — and
+   any mermaid diagram already drawn on screen prints with it. */
+@media print {
+  .doc-top,
+  .doc-nav,
+  .doc-toc,
+  .doc-scrim,
+  .doc-copypath,
+  .doc-prose .doc-anchor {
+    display: none !important;
+  }
+
+  .doc-root,
+  .doc-root.scheme-dark {
+    --doc-bg: #ffffff;
+    --doc-text: #1c1d21;
+    --doc-muted: #4b4f57;
+    --doc-line: #d7d9de;
+    --doc-rule: #e6e7ea;
+    --doc-code-bg: #f5f6f8;
+    --doc-nav-bg: #f5f6f8;
+    --doc-table-size: 12px;
+
+    min-height: 0;
+  }
+
+  /* Tighter type on paper — smaller and closer-leaded than on screen, so more
+     fits a sheet without crowding. `p`/`ul`/`ol` carry their own size and
+     line-height on screen, so print has to override them by the same selector,
+     not just `.doc-prose`. Headings and code keep their relative rhythm. */
+  .doc-prose {
+    font-size: 12px;
+  }
+
+  .doc-prose p,
+  .doc-prose ul,
+  .doc-prose ol {
+    margin-bottom: 9px;
+    font-size: 12px;
+    line-height: 1.55;
+  }
+
+  .doc-prose li {
+    margin: 2px 0;
+  }
+
+  /* Match the body's leading in table cells so rows read at one consistent
+     height, whatever the wrap mode set on screen. */
+  .doc-root .doc-prose th,
+  .doc-root .doc-prose td {
+    padding: 6px 10px;
+    line-height: 1.55;
+  }
+
+  .doc-prose h1 {
+    font-size: 22px;
+  }
+
+  .doc-prose h2 {
+    font-size: 16px;
+  }
+
+  .doc-prose h3 {
+    font-size: 11.5px;
+  }
+
+  .doc-prose h4 {
+    font-size: 13px;
+  }
+
+  .doc-prose pre {
+    font-size: 11px;
+  }
+
+  .doc-body {
+    display: block;
+    max-width: none;
+    margin: 0;
+  }
+
+  .doc-main {
+    padding: 0;
+  }
+
+  .doc-prose > *,
+  .doc-prose > .doc-wide,
+  .doc-prose > p:has(> img:only-child) {
+    max-width: none;
+  }
+
+  /* Never slice a code block, table, quote, diagram or image across a page. */
+  .doc-prose pre,
+  .doc-prose table,
+  .doc-prose blockquote,
+  .doc-prose img,
+  .doc-mermaid {
+    break-inside: avoid;
+  }
+
+  /* A heading must not be stranded as the last line of a page. */
+  .doc-prose h1,
+  .doc-prose h2,
+  .doc-prose h3,
+  .doc-prose h4 {
+    break-after: avoid;
+  }
+
+  /* Spell out external targets so a paper copy stays navigable; in-page anchors
+     would just print noise. */
+  .doc-prose a[href^='http']::after {
+    content: ' (' attr(href) ')';
+    color: var(--doc-muted);
+    font-size: 0.85em;
+    word-break: break-all;
   }
 }

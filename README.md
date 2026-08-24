@@ -149,6 +149,11 @@ permalink; clicking it copies the absolute URL rather than navigating.
 **Full screen** — tables, diagrams and images each get a zoom button that opens them in an overlay, because a sequence
 diagram never fits a documentation column.
 
+**Print / Save as PDF** — a toolbar button prints the current page through the browser, so any reader can save a PDF
+with no server-side dependency. A `@media print` sheet drops the top bar, both rails and every control, forces the dark
+scheme back to ink-on-paper, and keeps code blocks, tables and diagrams from splitting across a page — and because the
+whole document already lives in the DOM, the export is the entire page, mermaid diagrams and all, not just the viewport.
+
 **Layout** — three columns (nav · prose · outline) that collapse into drawers on a phone, a scroll-spy outline, and a
 light/dark toggle remembered in `localStorage`. The scheme lives on `.doc-root`, never on `<html>`, so the panel never
 fights the host app's own theme state.
