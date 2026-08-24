@@ -132,7 +132,9 @@ final class AiDocs
     {
         $path = rtrim(base_path($panel['root']), '/');
 
-        return realpath($path) ?: $path;
+        // Forward slashes always — a Windows realpath() hands back backslashes, which
+        // break every downstream `str_starts_with($absolute, $root.'/')` boundary check.
+        return str_replace('\\', '/', realpath($path) ?: $path);
     }
 
     public static function excluded(string $relative): bool

@@ -155,7 +155,7 @@ final class Links
     private static function outside(Link $link, string $absolute): void
     {
         $base = config('ai-docs.source_link_base');
-        $inProject = self::under($absolute, rtrim(base_path(), '/'));
+        $inProject = self::under($absolute, str_replace('\\', '/', rtrim(base_path(), '/')));
 
         if (is_string($base) && $base !== '' && $inProject !== null) {
             $link->setUrl(rtrim($base, '/').'/'.$inProject);

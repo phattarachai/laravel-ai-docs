@@ -65,14 +65,13 @@ final class Docs
             return null;
         }
 
-        $absolute = realpath(AiDocs::root().'/'.$path);
-        $root = realpath(AiDocs::root());
+        $relative = self::within(realpath(AiDocs::root().'/'.$path), realpath(AiDocs::root()));
 
-        if ($absolute === false || $root === false || ! str_starts_with($absolute, $root.'/')) {
+        if ($relative === null || AiDocs::excluded($relative)) {
             return null;
         }
 
-        return AiDocs::excluded(substr($absolute, strlen($root) + 1)) ? null : $absolute;
+        return str_replace('\\', '/', (string) realpath(AiDocs::root().'/'.$path));
     }
 
     private static function resolve(string $slug): ?string
@@ -81,16 +80,27 @@ final class Docs
             return null;
         }
 
-        $absolute = realpath(AiDocs::root().'/'.$slug.'.md');
-        $root = realpath(AiDocs::root());
+        $relative = self::within(realpath(AiDocs::root().'/'.$slug.'.md'), realpath(AiDocs::root()));
 
-        if ($absolute === false || $root === false || ! str_starts_with($absolute, $root.'/')) {
+        return $relative === null || AiDocs::excluded($relative) ? null : $relative;
+    }
+
+    /**
+     * The path of $absolute relative to $root, or null if it is false or escapes the
+     * root. Separators are normalised to `/` first, so a Windows `realpath()` (which
+     * hands back backslashes) still matches a forward-slash root — without this every
+     * page resolved to null and the docs served blank on a Windows/Laragon host.
+     */
+    private static function within(string|false $absolute, string|false $root): ?string
+    {
+        if ($absolute === false || $root === false) {
             return null;
         }
 
-        $relative = substr($absolute, strlen($root) + 1);
+        $absolute = str_replace('\\', '/', $absolute);
+        $root = str_replace('\\', '/', $root);
 
-        return AiDocs::excluded($relative) ? null : $relative;
+        return str_starts_with($absolute, $root.'/') ? substr($absolute, strlen($root) + 1) : null;
     }
 
     /**
