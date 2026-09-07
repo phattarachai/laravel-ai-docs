@@ -139,7 +139,10 @@ final class DocTree
      */
     private static function tree(array $pages): array
     {
-        $directories = self::directories(array_keys($pages));
+        // PHP turns a numeric-string array key into an int, so a folder named `2609` comes
+        // back out of `$pages` as the integer 2609 and every string operation below trips
+        // over it. Cast at the boundary rather than defending in each consumer.
+        $directories = self::directories(array_map(strval(...), array_keys($pages)));
         $groups = [];
 
         if (isset($pages[''])) {
@@ -197,7 +200,7 @@ final class DocTree
             }
         }
 
-        return array_keys($directories);
+        return array_map(strval(...), array_keys($directories));
     }
 
     /**

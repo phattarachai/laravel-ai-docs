@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Phattarachai\AiDocs\AiDocs;
 use Phattarachai\AiDocs\Support\Docs;
+use Phattarachai\AiDocs\Support\DocTree;
 
 use function Pest\Laravel\actingAs;
 
@@ -83,4 +84,15 @@ it('keeps each panel search index to its own pages', function (): void {
         ->not->toContain('guides/labels')
         ->and($slugs('/docs/_search.json'))->toContain('guides/labels')
         ->not->toContain('cycle-1/42-thing/todo');
+});
+
+it('groups a folder whose name is all digits instead of tripping over the integer key', function (): void {
+    $groups = AiDocs::within('tasks', fn (): array => DocTree::groups());
+
+    expect(array_column($groups, 'key'))->toContain('2609');
+
+    actingAs(adUser())
+        ->get(route('ai-docs.tasks.index', ['path' => '2609/31-migrate/todo']))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->where('page.path', '.ai/tasks/2609/31-migrate/todo.md'));
 });
