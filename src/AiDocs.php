@@ -203,10 +203,26 @@ final class AiDocs
         return [
             'name' => (string) ($brand['name'] ?? 'Docs'),
             'accent' => (string) ($brand['accent'] ?? '#3b82f6'),
-            'url' => (string) ($brand['url'] ?? '/'),
-            'logo' => $brand['logo'] === null ? null : (string) $brand['logo'],
+            'url' => self::appPath((string) ($brand['url'] ?? '/')),
+            'logo' => $brand['logo'] === null ? null : self::appPath((string) $brand['logo']),
             'tables' => (string) config('ai-docs.tables', 'wrap'),
         ];
+    }
+
+    /**
+     * A root-relative brand link or logo is relative to the *app*, not the domain — the default
+     * `/` means "back to the app", and under a subfolder deploy that is `/sap-wms/public`, not
+     * the host root. Folded through `url()` like {@see self::urlOf()} does for doc links.
+     * Anything already absolute is left alone: `https://…`, a protocol-relative `//cdn/…`, a
+     * `data:` URI.
+     */
+    private static function appPath(string $value): string
+    {
+        if (! str_starts_with($value, '/') || str_starts_with($value, '//')) {
+            return $value;
+        }
+
+        return parse_url(url($value), PHP_URL_PATH) ?: '/';
     }
 
     /**
