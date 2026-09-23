@@ -83,7 +83,7 @@ final class Meta
      */
     private static function split(string $head): array
     {
-        $lines = preg_split('/\R/', $head) ?: [];
+        $lines = preg_split('/\r\n|\r|\n/', $head) ?: [];
 
         if (($lines[0] ?? '') !== '---') {
             return [[], $head];
@@ -118,7 +118,7 @@ final class Meta
 
     private static function h1(string $body): string
     {
-        foreach (preg_split('/\R/', $body) ?: [] as $line) {
+        foreach (preg_split('/\r\n|\r|\n/', $body) ?: [] as $line) {
             if (trim($line) === '') {
                 continue;
             }

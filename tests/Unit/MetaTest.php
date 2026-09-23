@@ -42,3 +42,16 @@ it('falls back to a generic id when a heading slugs to nothing', function (): vo
     expect(Slug::make('###', $seen))->toBe('section')
         ->and(Slug::make('แดชบอร์ด', $seen))->toBe('แดชบอร์ด');
 });
+
+it('reads a heading whose emoji carries a 0x85 byte whole', function (): void {
+    // ✅ is e2 9c 85, and a non-/u \R matches the lone 0x85 as NEL, which cut the title
+    // mid-character and made the page props un-encodable (a blank page).
+    $file = tempnam(sys_get_temp_dir(), 'meta');
+    file_put_contents($file, "---\nnav: Plan 3\n---\n# Plan 3 — stock levels ✅ (2026-09-08)\n\nBody ✅ text.\n");
+
+    expect(Meta::read($file, 'fallback'))
+        ->title->toBe('Plan 3 — stock levels ✅ (2026-09-08)')
+        ->nav->toBe('Plan 3');
+
+    unlink($file);
+});
