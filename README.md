@@ -26,7 +26,7 @@ person appears in them.</sub>
 - **PHP 8.4+, Laravel 11/12/13.**
 - **Inertia v2/v3 + React 18/19** in the host app. The panel is an Inertia page, not a Blade view.
 - The host app **builds its own assets** — nothing is precompiled or published as a bundle.
-- **`mermaid` as an npm dependency.** It is a peer dependency, lazy-imported; without it diagram fences degrade to
+- **`mermaid` 11 or 12 as an npm dependency.** It is a peer dependency, lazy-imported; without it diagram fences degrade to
   plain text rather than breaking the page.
 - **An access gate.** There is no default. Until you register one, every request is refused.
 
@@ -133,6 +133,7 @@ render cache with the rest of the page.
 **Mermaid diagrams** — a ```` ```mermaid ```` fence becomes a diagram, with `mermaid` lazy-imported on the first page
 that has one. Both schemes are themed to match the panel, and a small semantic palette is available to opt into with
 `class Node decision` or `Node:::decision` — `decision`, `ok`, `bad`, `actor`.
+Diagrams lay out with dagre on either major; mermaid 12's ELK default is not used.
 
 **GitHub alerts** — `> [!NOTE]`, `> [!TIP]`, `> [!IMPORTANT]`, `> [!WARNING]`, `> [!CAUTION]` render as titled
 callouts, with the title translated.
