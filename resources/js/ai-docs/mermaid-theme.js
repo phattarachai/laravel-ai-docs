@@ -108,6 +108,9 @@ export function themeFor(scheme) {
   return {
     startOnLoad: false,
     securityLevel: 'strict',
+    // mermaid 12 defaults to ELK, which reorders a doc's flow away from source
+    // order and fetches a ~1.4 MB layout chunk. A no-op on mermaid 11.
+    layout: 'dagre',
     theme: 'base',
     // Also reaches the throwaway measure container and any plain SVG `<text>`,
     // which `LABEL_CSS` — scoped to `<foreignObject>` — does not.
