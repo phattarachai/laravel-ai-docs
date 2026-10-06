@@ -138,6 +138,7 @@ it('indexes the drawing\'s text under the section that holds it', function (): v
 
 it('re-renders a cached page when only the svg changes', function (): void {
     config()->set('ai-docs.cache', value: true);
+    config()->set('cache.default', 'array');
 
     $md = AiDocs::root().'/cached.md';
     $svg = AiDocs::root().'/cached.svg';
