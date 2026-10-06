@@ -174,10 +174,12 @@ flowchart TD
 On a diagram it is a second word in the fence info string; on an image it goes in the title slot (and is stripped, so
 it never shows as a tooltip). It only affects print — on screen both render full size. Any other value is ignored.
 
-**Wide figures** — `wide` lets one diagram or image take the outline rail's width as well as the column, for the
-landscape drawing that needs every pixel. It combines with the other keywords in any order. On a narrower screen, where
-the outline is a drawer, the figure drops back to the column. On a phone, an inlined SVG keeps a legible size and
-scrolls sideways.
+**Wide figures** — `wide` lets one diagram or image also take the outline rail's width, for the landscape drawing that
+needs every pixel. That happens only on a page with no outline (no `##` headings), where the rail is empty. A page with
+an outline keeps the figure in the column so the outline is never covered; collapse the rail, or use the figure's zoom
+button, to see it larger. `wide` combines with the other keywords in any order. On a narrower screen, where the outline
+is a drawer, the figure stays in the column. On a phone, an inlined SVG marked `wide` keeps a legible size and scrolls
+sideways.
 
 ````markdown
 ```mermaid wide print-70
@@ -234,11 +236,14 @@ renders on GitHub or in an image viewer:
 | `--doc-text`                    | `#1c1d21` | `#e7e8ed` | labels                   |
 | `--doc-muted`                   | `#71757e` | `#9ca0ae` | secondary labels         |
 | `--doc-line`                    | `#e6e7ea` | `#32333e` | borders, connectors      |
-| `--doc-accent`                  | `brand.accent` | same | highlights               |
+| `--doc-accent`                  | `brand.accent` | same | strokes, tints — not text |
 | `--doc-ok-bg` / `-line` / `-text`    | `#dcfce7` `#16a34a` `#14532d` | `#0b2f1a` `#22c55e` `#bbf7d0` | done, migrated |
 | `--doc-warn-bg` / `-line` / `-text`  | `#fef3c7` `#d97706` `#78350f` | `#3b2408` `#f59e0b` `#fde68a` | in progress, dual-run |
 | `--doc-bad-bg` / `-line` / `-text`   | `#fee2e2` `#dc2626` `#7f1d1d` | `#3d1113` `#ef4444` `#fecaca` | broken, pending |
 | `--doc-actor-bg` / `-line` / `-text` | `#dbeafe` `#2563eb` `#1e3a8a` | `#16244d` `#60a5fa` `#bfdbfe` | people, outside systems |
+
+`--doc-accent` is your brand colour, the same in both schemes. A dark brand (`#3a4a8c`) is unreadable as text on the
+dark scheme, so use it for strokes, outlines and tints, and use `--doc-text` for labels.
 
 The four tones are the same palette as mermaid's `ok` / `decision` / `bad` / `actor` classes (`warn` is `decision`), so
 hand-drawn and generated diagrams on one page agree.

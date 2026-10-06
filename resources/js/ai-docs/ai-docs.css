@@ -457,20 +457,16 @@
   margin: 0 0 16px;
 }
 
-/* `wide` — one figure takes the outline rail's width as well as the column. The
-   variable is zero once the rail is collapsed, and the narrow block below drops
-   the bleed when the rail becomes a drawer. The figure sits over the sticky
-   outline while it scrolls past, so it carries the page background. */
-.doc-prose > .doc-bleed,
-.doc-prose > p:has(> img.doc-bleed:only-child) {
-  z-index: 3;
+/* `wide` — one figure also takes the outline rail's width, but only when that
+   column is empty: a page with no outline renders a bare `<aside class="doc-toc">`.
+   With an outline it stays in the column, because painting over a sticky rail
+   hides the outline it exists to show. A collapsed rail is zero wide and has
+   already given its width to the column. The narrow block below drops the bleed
+   when the rail becomes a drawer. */
+.doc-body:has(> .doc-toc:empty) .doc-prose > .doc-bleed,
+.doc-body:has(> .doc-toc:empty) .doc-prose > p:has(> img.doc-bleed:only-child) {
   width: calc(100% + var(--doc-toc-w));
   max-width: none;
-  background: var(--doc-bg);
-}
-
-.doc-prose > p:has(> img.doc-bleed:only-child) {
-  position: relative;
 }
 
 /* An inlined SVG — the viewBox keeps the ratio, the column sets the width. It
@@ -1220,8 +1216,8 @@
     display: block;
   }
 
-  .doc-prose > .doc-bleed,
-  .doc-prose > p:has(> img.doc-bleed:only-child) {
+  .doc-body:has(> .doc-toc:empty) .doc-prose > .doc-bleed,
+  .doc-body:has(> .doc-toc:empty) .doc-prose > p:has(> img.doc-bleed:only-child) {
     width: 100%;
   }
 }
@@ -1383,8 +1379,8 @@
     max-width: none;
   }
 
-  .doc-prose > .doc-bleed,
-  .doc-prose > p:has(> img.doc-bleed:only-child) {
+  .doc-body:has(> .doc-toc:empty) .doc-prose > .doc-bleed,
+  .doc-body:has(> .doc-toc:empty) .doc-prose > p:has(> img.doc-bleed:only-child) {
     width: auto;
   }
 
