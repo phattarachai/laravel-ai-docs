@@ -104,7 +104,10 @@ export function useMermaid(containerRef, slug, scheme) {
         }
       })
       .catch((error) => {
-        console.warn('[ai-docs] mermaid could not be loaded; showing diagram sources instead.', error)
+        console.warn(
+          '[ai-docs] mermaid could not be loaded; showing diagram sources instead.',
+          error,
+        )
         nodes.forEach((node) => node.replaceChildren(fallback(node.getAttribute('data-src') ?? '')))
       })
 
