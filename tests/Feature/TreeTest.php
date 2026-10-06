@@ -10,6 +10,7 @@ it('lists every doc outside the excluded prefixes, and nothing inside them', fun
     expect(array_column(DocTree::flatten(), 'slug'))->toEqualCanonicalizing([
         'index',
         'links',
+        'diagrams',
         'private',
         'guides/getting-started',
         'guides/labels',

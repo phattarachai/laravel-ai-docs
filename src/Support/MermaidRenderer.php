@@ -25,17 +25,10 @@ final class MermaidRenderer implements NodeRendererInterface
             return null;
         }
 
-        $class = 'doc-mermaid';
+        $keywords = Keywords::words(array_values(array_slice($words, 1)));
+        $class = implode(' ', array_filter(['doc-mermaid', $keywords->printClass()]));
 
-        foreach (array_slice($words, 1) as $word) {
-            if (($size = PrintSize::classFor($word)) !== null) {
-                $class .= ' '.$size;
-
-                break;
-            }
-        }
-
-        return new HtmlElement('div', ['class' => 'doc-wide'], [
+        return new HtmlElement('div', ['class' => $keywords->wide ? 'doc-wide doc-bleed' : 'doc-wide'], [
             new HtmlElement('button', ['type' => 'button', 'class' => 'doc-zoom', 'aria-label' => (string) trans('ai-docs::ui.zoom.open')]),
             new HtmlElement('div', ['class' => $class, 'data-src' => $node->getLiteral()]),
         ]);

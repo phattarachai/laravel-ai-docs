@@ -3,10 +3,11 @@
 Notes for whoever maintains this package. Everything here is a bug that already happened once; the
 code carries no comment explaining it, so this is the only record.
 
-## The render cache keys on the pipeline file's own mtime
+## The render cache keys on the pipeline's own mtime
 
-`Markdown::version()` returns `filemtime(__FILE__)`. Editing the pipeline therefore invalidates
-every cached page automatically.
+`Markdown::version()` returns the newest mtime among `src/Support/*.php`. Editing any part of the
+pipeline therefore invalidates every cached page automatically. It used to be `filemtime(__FILE__)`,
+which missed an edit to a renderer in its own file.
 
 The obvious alternative — a hand-bumped `CACHE_VERSION` constant — was in place for exactly one
 afternoon before it was forgotten after adding syntax highlighting, and the panel served stale HTML
@@ -142,3 +143,38 @@ Punctuation is **removed, not replaced**, and hyphen runs are never collapsed �
 leaves two hyphens (`Activity Log — /admin/activity` → `activity-log--adminactivity`). Thai combining
 marks are kept. Docs in the wild already carry hand-written anchors built on these rules; "fixing"
 the slugger breaks all of them at once.
+
+## An inlined SVG is copied, not cleaned
+
+`InlineSvg` builds a fresh `DOMDocument` and copies across only the whitelisted elements and
+attributes. It never deletes from the source. A deny-list sanitizer fails open: anything nobody
+thought of survives. A copier fails closed: anything it doesn't know is never written.
+
+`enshrined/svg-sanitize` was evaluated and rejected for two reasons. It is GPL-2.0-or-later, which an
+MIT package can't pull in for its users. And its whitelist was designed for a standalone `.svg`
+file, so it allows `<font>`. Inside HTML, `<font>` is a parser *breakout* tag: the browser leaves SVG
+parsing at that point, and the rest of the drawing is read as HTML. Anything added to `ELEMENTS` must
+not be on the HTML spec's breakout list (`b`, `div`, `font`, `img`, `p`, `span`, `table`, …).
+
+SMIL elements (`<set>`, `<animate>`) are left out because `<set attributeName="href"
+to="javascript:…">` writes a link after sanitizing has finished. `feImage` is left out because it
+fetches.
+
+## Inlined SVG ids are namespaced twice
+
+Every id becomes `ds-<hash>-<n>-<id>`, and the root becomes the stem `ds-<hash>-<n>`, which also
+scopes the drawing's `<style>`. An inline SVG shares the page's id space. Two `<marker id="arrow">`s
+on one page resolve to whichever comes first in the DOM, and Chrome draws nothing when that one is
+not rendered.
+
+Full screen copies the figure's `outerHTML` while the original stays mounted underneath, so
+`zoomable()` in `AiDocs.jsx` swaps the stem for `<stem>z` in the copy. The swap is a plain string
+replace, which is safe only because the stem is unique to that figure's markup. Keep the
+`ds-<hash>-<n>` shape if you change it.
+
+## A page's render cache records the SVGs it inlined
+
+The cache key names the `.md` file, but an inlined SVG is a second input that isn't known until the
+page has been parsed. Each cache entry therefore stores `files: [path => mtime]`, and `Docs::rendered()`
+re-renders when any of them has changed. The search index signature goes through `Docs::stamp()` for
+the same reason. Without this, editing only the drawing never reaches the page.

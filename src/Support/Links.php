@@ -23,11 +23,12 @@ final class Links
             return;
         }
 
-        $absolute = self::normalize(AiDocs::root().'/'.ltrim($docDir.'/'.explode('#', $url)[0], '/'));
+        $absolute = self::absolute($url, $docDir);
         $media = self::media($absolute);
 
         if ($media !== null) {
             $image->setUrl($media);
+            $image->data->set('doc_file', $absolute);
 
             return;
         }
@@ -53,18 +54,49 @@ final class Links
             return;
         }
 
-        [$path, $fragment] = array_pad(explode('#', $url, 2), 2, '');
-
-        $absolute = self::normalize(AiDocs::root().'/'.ltrim($docDir.'/'.$path, '/'));
-        $target = self::target($absolute);
+        $target = self::href($url, $docDir);
 
         if ($target !== null) {
-            $link->setUrl($target.($fragment === '' ? '' : '#'.$fragment));
+            $link->setUrl($target);
 
             return;
         }
 
-        self::outside($link, $absolute);
+        self::outside($link, self::absolute($url, $docDir));
+    }
+
+    /**
+     * The panel URL a relative link lands on, fragment kept — or null when it leaves
+     * the panels. Also what a link drawn inside an inlined SVG resolves through.
+     */
+    public static function href(string $url, string $docDir): ?string
+    {
+        if ($url === '' || str_starts_with($url, '#') || preg_match('#^[a-z][a-z0-9+.-]*:|^//#i', $url) === 1) {
+            return null;
+        }
+
+        $fragment = explode('#', $url, 2)[1] ?? '';
+        $target = self::target(self::absolute($url, $docDir));
+
+        return $target === null ? null : $target.($fragment === '' ? '' : '#'.$fragment);
+    }
+
+    /**
+     * The `_media` URL of a relative image reference, or null when it is not an
+     * in-tree image.
+     */
+    public static function mediaUrl(string $url, string $docDir): ?string
+    {
+        if ($url === '' || preg_match('#^[a-z][a-z0-9+.-]*:|^//#i', $url) === 1) {
+            return null;
+        }
+
+        return self::media(self::absolute($url, $docDir));
+    }
+
+    private static function absolute(string $url, string $docDir): string
+    {
+        return self::normalize(AiDocs::root().'/'.ltrim($docDir.'/'.explode('#', $url, 2)[0], '/'));
     }
 
     /**

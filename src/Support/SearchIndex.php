@@ -48,7 +48,7 @@ final class SearchIndex
     private static function signature(array $docs): string
     {
         $parts = array_map(
-            fn (array $doc): string => $doc['slug'].':'.(int) @filemtime(AiDocs::root().'/'.$doc['slug'].'.md'),
+            fn (array $doc): string => $doc['slug'].':'.Docs::stamp($doc['slug']),
             $docs,
         );
 

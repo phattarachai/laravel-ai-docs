@@ -49,3 +49,16 @@ it('ignores a print size outside the whitelist', function (): void {
     expect($html)->toContain('class="doc-mermaid"')
         ->not->toContain('doc-print');
 });
+
+it('lets a mermaid diagram or an image bleed wide, alongside a print size', function (): void {
+    $html = Markdown::render("```mermaid wide print-70\nflowchart TD\nA-->B\n```\n\n![A](https://example.test/y.png \"wide inline\")\n", '')['html'];
+
+    expect($html)->toContain('<div class="doc-wide doc-bleed"><button')
+        ->toContain('class="doc-mermaid doc-print-70"')
+        ->toContain('<img class="doc-bleed" src="https://example.test/y.png" alt="A" />');
+});
+
+it('keeps an ordinary image title as a tooltip', function (): void {
+    expect(Markdown::render('![A](https://example.test/y.png "Hover me")', '')['html'])
+        ->toContain('title="Hover me"');
+});

@@ -141,7 +141,9 @@ callouts, with the title translated.
 
 **Images stay private.** An image beside your markdown is rewritten to `/docs/_media/{path}` and streamed through the
 same gate, so nothing has to be copied into `public/`. Only real image extensions inside the docs root are served, and
-`exclude`d paths are refused.
+`exclude`d paths are refused. Every file goes out with `X-Content-Type-Options: nosniff`, and an SVG also carries a
+`Content-Security-Policy` that allows no script, so opening one directly in the address bar can't run anything inside
+it.
 
 **Copy the path, not the page.** A button on every page copies its repo-relative path —
 `.ai/documents/billing/payment-retries.md` — ready to paste after `@` in Claude Code, Cursor, or whatever is reading
@@ -171,6 +173,96 @@ flowchart TD
 
 On a diagram it is a second word in the fence info string; on an image it goes in the title slot (and is stripped, so
 it never shows as a tooltip). It only affects print — on screen both render full size. Any other value is ignored.
+
+**Wide figures** — `wide` lets one diagram or image take the outline rail's width as well as the column, for the
+landscape drawing that needs every pixel. It combines with the other keywords in any order. On a narrower screen, where
+the outline is a drawer, the figure drops back to the column. On a phone, an inlined SVG keeps a legible size and
+scrolls sideways.
+
+````markdown
+```mermaid wide print-70
+flowchart LR
+  A --> B
+```
+
+![System landscape](landscape.png "wide")
+````
+
+An image title holding only keywords (`inline`, `wide`, `print-NN`) is read as directives and removed. A title with any
+other word in it stays an ordinary tooltip.
+
+### Hand-drawn SVG diagrams
+
+Mermaid suits flows. A landscape map with status pills, coloured connectors and Thai labels is easier to draw by hand.
+Keep the `.svg` beside the markdown and add `inline` to the image title:
+
+```markdown
+![MJ system landscape](mj-systems.svg "inline wide")
+```
+
+The drawing is written into the page instead of being loaded through `<img>`, which changes four things:
+
+- It **uses the panel's font**. Leave `font-family` off your `<text>` and Thai labels match the prose around them. An
+  `<img>` SVG can't load web fonts.
+- It **can follow the light/dark toggle** through the panel's CSS custom properties, if you draw with them (below).
+- **Links work.** `<a href="sap-etax.md#flow">` around a card is resolved like a markdown link, across panels too, and
+  opens that doc in place. An `<a href="#heading">` jumps to a heading on the same page.
+- It **gets the same zoom button and `print-NN` sizing** as a mermaid diagram. `wide` and `print-NN` combine with
+  `inline`, e.g. `"inline wide print-80"`.
+
+`inline` applies only to an in-tree `.svg` that sits alone in its paragraph. A remote SVG, one sharing its line with
+text, or a file that won't parse stays a plain `<img>`. The drawing's `<text>` is added to search, under the heading it
+sits beneath. Editing only the `.svg` refreshes the cached page.
+
+**Server-side sanitizing.** The SVG is copied element by element, and only drawing elements cross over: shapes, text,
+`<defs>`, `<marker>`, gradients, patterns, clip paths, masks, filters, `<style>`. Script, `<foreignObject>`, animation
+elements, comments and every `on*` attribute are left behind. An `href` survives only as a `#fragment`, as a link to
+another doc, or as an `<image>` of an in-tree picture. External, `javascript:` and `data:` URLs are dropped, and so is
+any `url()` that would fetch.
+
+**Ids are namespaced per figure.** `id="arrow"` becomes `id="ds-…-1-arrow"`, and every `url(#arrow)`, `href="#arrow"`
+and `#arrow` selector follows it. The same drawing can therefore appear twice on one page, and the full-screen copy
+re-namespaces again. The fixed `width`/`height` is dropped and the `viewBox` kept, so the drawing scales with the
+column. The `<style>` block is scoped to the drawing's own root, so `.card { … }` can't restyle the page around it.
+
+**Theme hooks.** These properties are set on the panel in both schemes. Write them with a fallback, so the file still
+renders on GitHub or in an image viewer:
+
+| Property                        | Light     | Dark      | For                      |
+|---------------------------------|-----------|-----------|--------------------------|
+| `--doc-bg`                      | `#ffffff` | `#16171d` | the page / card fill     |
+| `--doc-text`                    | `#1c1d21` | `#e7e8ed` | labels                   |
+| `--doc-muted`                   | `#71757e` | `#9ca0ae` | secondary labels         |
+| `--doc-line`                    | `#e6e7ea` | `#32333e` | borders, connectors      |
+| `--doc-accent`                  | `brand.accent` | same | highlights               |
+| `--doc-ok-bg` / `-line` / `-text`    | `#dcfce7` `#16a34a` `#14532d` | `#0b2f1a` `#22c55e` `#bbf7d0` | done, migrated |
+| `--doc-warn-bg` / `-line` / `-text`  | `#fef3c7` `#d97706` `#78350f` | `#3b2408` `#f59e0b` `#fde68a` | in progress, dual-run |
+| `--doc-bad-bg` / `-line` / `-text`   | `#fee2e2` `#dc2626` `#7f1d1d` | `#3d1113` `#ef4444` `#fecaca` | broken, pending |
+| `--doc-actor-bg` / `-line` / `-text` | `#dbeafe` `#2563eb` `#1e3a8a` | `#16244d` `#60a5fa` `#bfdbfe` | people, outside systems |
+
+The four tones are the same palette as mermaid's `ok` / `decision` / `bad` / `actor` classes (`warn` is `decision`), so
+hand-drawn and generated diagrams on one page agree.
+
+```svg
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 120">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" style="fill: var(--doc-muted, #71757e)"/>
+    </marker>
+  </defs>
+  <a href="sap-etax.md">
+    <rect x="10" y="30" width="130" height="60" rx="10"
+          style="fill: var(--doc-ok-bg, #dcfce7); stroke: var(--doc-ok-line, #16a34a)"/>
+    <text x="75" y="65" text-anchor="middle" style="fill: var(--doc-ok-text, #14532d)">sap-etax</text>
+  </a>
+  <path d="M140,60 H220" marker-end="url(#arrow)" style="stroke: var(--doc-line, #e6e7ea)"/>
+  <text x="270" y="65" text-anchor="middle" style="fill: var(--doc-text, #1c1d21)">BBL e-Tax</text>
+</svg>
+```
+
+Put the variables in `style="fill: …"`, not in a presentation attribute (`fill="var(…)"`), which doesn't take `var()`
+reliably in every browser. Leave out a full-size white background `<rect>`, so the panel's own background shows through
+and follows the scheme.
 
 **Layout** — three columns (nav · prose · outline) that collapse into drawers on a phone, a scroll-spy outline, and a
 light/dark toggle remembered in `localStorage`. The scheme lives on `.doc-root`, never on `<html>`, so the panel never

@@ -43,6 +43,22 @@ final class Docs
         return $relative === null ? [] : self::rendered($relative)['sections'];
     }
 
+    /**
+     * The mtime of the page and of every SVG it inlines — what the search index keys on.
+     */
+    public static function stamp(string $slug): string
+    {
+        $relative = self::resolve(trim($slug, '/'));
+
+        if ($relative === null) {
+            return '';
+        }
+
+        $files = [AiDocs::root().'/'.$relative => 0, ...self::rendered($relative)['files']];
+
+        return implode(',', array_map(fn (string $file): int => (int) @filemtime($file), array_keys($files)));
+    }
+
     public static function first(): ?string
     {
         if (self::resolve('index') !== null) {
@@ -104,7 +120,12 @@ final class Docs
     }
 
     /**
-     * @return array{html: string, toc: list<array{id: string, text: string, level: int}>, sections: list<array{id: string, heading: string, level: int, text: string}>}
+     * The render cache is keyed on the markdown file; an inlined SVG is a second input
+     * that the key cannot name before the page is parsed. So each entry records every SVG
+     * it inlined with that file's mtime, and is re-rendered when any of them has moved
+     * on. Otherwise, editing only the drawing would never reach the page.
+     *
+     * @return array{html: string, toc: list<array{id: string, text: string, level: int}>, sections: list<array{id: string, heading: string, level: int, text: string}>, files: array<string, int>}
      */
     private static function rendered(string $relative): array
     {
@@ -125,6 +146,30 @@ final class Docs
             (int) filemtime($absolute),
         ]);
 
-        return Cache::rememberForever($key, fn (): array => Markdown::render($markdown, $directory));
+        $cached = Cache::get($key);
+
+        if (is_array($cached) && is_array($cached['files'] ?? null) && self::fresh($cached['files'])) {
+            /** @var array{html: string, toc: list<array{id: string, text: string, level: int}>, sections: list<array{id: string, heading: string, level: int, text: string}>, files: array<string, int>} $cached */
+            return $cached;
+        }
+
+        $rendered = Markdown::render($markdown, $directory);
+        Cache::forever($key, $rendered);
+
+        return $rendered;
+    }
+
+    /**
+     * @param  array<array-key, mixed>  $files
+     */
+    private static function fresh(array $files): bool
+    {
+        foreach ($files as $file => $mtime) {
+            if ((int) @filemtime((string) $file) !== $mtime) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

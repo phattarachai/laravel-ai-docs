@@ -66,6 +66,8 @@ const VARIABLES = {
 }
 
 // The vocabulary a doc opts into with `class Node decision` or `Node:::decision`.
+// Keep in sync with the `--doc-{ok,warn,bad,actor}-*` tokens in ai-docs.css, which
+// hand-drawn SVGs use; `decision` is `warn` there.
 const TONES = {
   light: {
     decision: ['#fef3c7', '#d97706', '#78350f'],

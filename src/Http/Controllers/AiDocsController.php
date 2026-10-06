@@ -16,6 +16,21 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 /** @see README.md */
 final class AiDocsController
 {
+    /**
+     * Sent explicitly: under `nosniff` a guessed `text/xml` would leave an SVG unrendered.
+     *
+     * @var array<string, string>
+     */
+    private const array TYPES = [
+        'png' => 'image/png',
+        'jpg' => 'image/jpeg',
+        'jpeg' => 'image/jpeg',
+        'gif' => 'image/gif',
+        'svg' => 'image/svg+xml',
+        'webp' => 'image/webp',
+        'avif' => 'image/avif',
+    ];
+
     public function show(?string $path = null): Response
     {
         $slug = $path ?? Docs::first();
@@ -41,6 +56,18 @@ final class AiDocsController
 
         abort_if($absolute === null, 404);
 
-        return response()->file($absolute, ['Cache-Control' => 'private, max-age=600']);
+        $headers = [
+            'Cache-Control' => 'private, max-age=600',
+            'Content-Type' => self::TYPES[mb_strtolower(pathinfo($absolute, PATHINFO_EXTENSION))],
+            'X-Content-Type-Options' => 'nosniff',
+        ];
+
+        // Same-origin, so an SVG opened directly would run any script inside it. An
+        // `<img>` never runs one either way; this covers the address bar.
+        if (str_ends_with(mb_strtolower($absolute), '.svg')) {
+            $headers['Content-Security-Policy'] = "default-src 'none'; style-src 'unsafe-inline'; img-src data:; font-src data:";
+        }
+
+        return response()->file($absolute, $headers);
     }
 }
