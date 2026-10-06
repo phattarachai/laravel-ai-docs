@@ -55,3 +55,24 @@ it('never serves media out of an excluded directory', function (): void {
         @unlink($file);
     }
 });
+
+it('sends nosniff on every file and a script-free policy on an svg', function (): void {
+    $png = AiDocs::root().'/guides/shot.png';
+    file_put_contents($png, base64_decode(PIXEL));
+
+    try {
+        actingAs(adUser())->get('/docs/_media/guides/shot.png')
+            ->assertOk()
+            ->assertHeader('X-Content-Type-Options', 'nosniff')
+            ->assertHeader('Content-Type', 'image/png')
+            ->assertHeaderMissing('Content-Security-Policy');
+
+        actingAs(adUser())->get('/docs/_media/diagrams.svg')
+            ->assertOk()
+            ->assertHeader('X-Content-Type-Options', 'nosniff')
+            ->assertHeader('Content-Type', 'image/svg+xml')
+            ->assertHeader('Content-Security-Policy', "default-src 'none'; style-src 'unsafe-inline'; img-src data:; font-src data:");
+    } finally {
+        @unlink($png);
+    }
+});

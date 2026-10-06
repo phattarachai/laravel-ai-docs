@@ -12,6 +12,7 @@ it('indexes one entry per servable doc, each split into sections', function (): 
     expect(array_column($index, 'slug'))->toEqualCanonicalizing([
         'index',
         'links',
+        'diagrams',
         'private',
         'guides/getting-started',
         'guides/labels',
@@ -39,6 +40,6 @@ it('carries the body text of a section into its entry', function (): void {
 it('hands the index to a signed-in reader over the endpoint', function (): void {
     $index = actingAs(adUser())->get(route('ai-docs.search'))->assertOk()->json();
 
-    expect($index)->toHaveCount(7)
+    expect($index)->toHaveCount(8)
         ->and($index[0])->toHaveKeys(['slug', 'title', 'group', 'sections']);
 });

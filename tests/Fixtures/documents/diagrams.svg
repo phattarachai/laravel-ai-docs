@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+     xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+     width="1200" height="700" viewBox="0 0 1200 700" onload="alert('root')" inkscape:version="1.3">
+  <!-- a comment that must not survive -->
+  <style>
+    @import url(https://evil.test/x.css);
+    svg { font-family: inherit; }
+    .card { fill: var(--doc-ok-bg, #dcfce7); }
+    #arrow path { fill: var(--doc-line, #e6e7ea); }
+    text, .label > tspan { fill: var(--doc-text, #1c1d21); background: url(https://evil.test/bg.png); }
+  </style>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z"/>
+    </marker>
+    <linearGradient id="bG" x1="0" x2="1">
+      <stop offset="0" stop-color="#fff"/>
+      <stop offset="1" stop-color="#eee"/>
+    </linearGradient>
+  </defs>
+  <script>alert('script')</script>
+  <foreignObject width="10" height="10"><div xmlns="http://www.w3.org/1999/xhtml">html inside</div></foreignObject>
+  <rect id="box" class="card" x="10" y="10" width="200" height="80" fill="url(#bG)" onclick="alert('click')"/>
+  <line x1="210" y1="50" x2="400" y2="50" stroke="#999" marker-end="url(#arrow)"/>
+  <use href="#box" x="400"/>
+  <a href="guides/labels.md#front-matter"><text x="20" y="50" class="label">ระบบ MJ <tspan>Labels card</tspan></text></a>
+  <a xlink:href="javascript:alert('xlink')"><text x="20" y="120">Bad link</text></a>
+  <a href="https://evil.test/away"><text x="20" y="150">Away</text></a>
+  <a href="#flow"><text x="20" y="180">Page anchor</text></a>
+  <image href="data:image/png;base64,AAAA" width="1" height="1"/>
+  <set attributeName="href" to="javascript:alert('set')"/>
+  <font><text>breakout</text></font>
+</svg>

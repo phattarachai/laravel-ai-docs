@@ -30,12 +30,13 @@ final class Markdown
 
     /**
      * @param  string  $docDir  the page's own directory, relative to the docs root ('' at root)
-     * @return array{html: string, toc: list<array{id: string, text: string, level: int}>, sections: list<array{id: string, heading: string, level: int, text: string}>}
+     * @return array{html: string, toc: list<array{id: string, text: string, level: int}>, sections: list<array{id: string, heading: string, level: int, text: string}>, files: array<string, int>}
      */
     public static function render(string $markdown, string $docDir): array
     {
         $toc = [];
         $sections = [];
+        $files = [];
 
         $environment = new Environment([
             'html_input' => 'escape',
@@ -48,8 +49,8 @@ final class Markdown
 
         $environment->addEventListener(
             DocumentParsedEvent::class,
-            function (DocumentParsedEvent $event) use (&$toc, &$sections, $docDir): void {
-                self::walk($event->getDocument(), $toc, $sections, $docDir);
+            function (DocumentParsedEvent $event) use (&$toc, &$sections, &$files, $docDir): void {
+                self::walk($event->getDocument(), $toc, $sections, $files, $docDir);
             },
         );
 
@@ -58,15 +59,20 @@ final class Markdown
         $environment->addRenderer(BlockQuote::class, new CalloutRenderer, 10);
         $environment->addRenderer(FencedCode::class, new MermaidRenderer, 10);
         $environment->addRenderer(FencedCode::class, new CodeRenderer, 9);
+        $environment->addRenderer(SvgFigure::class, new SvgFigureRenderer);
 
         $html = (string) new MarkdownConverter($environment)->convert($markdown);
 
-        return ['html' => self::tables($html), 'toc' => $toc, 'sections' => $sections];
+        return ['html' => self::tables($html), 'toc' => $toc, 'sections' => $sections, 'files' => $files];
     }
 
+    /**
+     * The newest file in the pipeline, so editing any renderer — not just this one —
+     * invalidates every cached page. @see docs/internals.md
+     */
     public static function version(): string
     {
-        return (string) @filemtime(__FILE__);
+        return (string) max(array_map(fn (string $file): int => (int) @filemtime($file), glob(__DIR__.'/*.php') ?: [__FILE__]));
     }
 
     public static function text(Node $node): string
@@ -100,10 +106,12 @@ final class Markdown
     /**
      * @param  list<array{id: string, text: string, level: int}>  $toc
      * @param  list<array{id: string, heading: string, level: int, text: string}>  $sections
+     * @param  array<string, int>  $files  every inlined SVG and its mtime, for the render cache
      */
-    private static function walk(Document $document, array &$toc, array &$sections, string $docDir): void
+    private static function walk(Document $document, array &$toc, array &$sections, array &$files, string $docDir): void
     {
         $seen = [];
+        $figures = [];
         $inHeading = false;
         $walker = $document->walker();
 
@@ -130,7 +138,13 @@ final class Markdown
 
             if ($node instanceof Image) {
                 Links::image($node, $docDir);
-                self::printSize($node);
+                $figure = self::figure($node, self::keywords($node), $docDir, count($figures));
+
+                if ($figure !== null) {
+                    $figures[] = $figure;
+                    $files[$figure[1]['file']] = (int) filemtime($figure[1]['file']);
+                    self::collect($sections, $figure[1]['text']);
+                }
             }
 
             if ($node instanceof BlockQuote) {
@@ -141,25 +155,61 @@ final class Markdown
                 self::collect($sections, $node->getLiteral());
             }
         }
+
+        // Swapped only once the walk is over: replacing the node being walked loses its siblings.
+        foreach ($figures as [$paragraph, $figure]) {
+            $paragraph->replaceWith($figure['node']);
+        }
     }
 
     /**
-     * A `print-70` image title is a print directive, not a tooltip: turn it into
-     * the wrapper class and drop the title so nothing hovers on screen.
+     * A keyword title (`"inline wide print-70"`) is a directive, not a tooltip: turn it
+     * into wrapper classes and drop the title so nothing hovers on screen.
      */
-    private static function printSize(Image $image): void
+    private static function keywords(Image $image): ?Keywords
     {
-        $class = PrintSize::classFor($image->getTitle());
+        $keywords = Keywords::title($image->getTitle());
 
-        if ($class === null) {
-            return;
+        if ($keywords === null) {
+            return null;
         }
 
-        $attributes = (array) $image->data->get('attributes');
-        $attributes['class'] = trim(($attributes['class'] ?? '').' '.$class);
+        $classes = trim(implode(' ', [((array) $image->data->get('attributes'))['class'] ?? '', ...$keywords->classes()]));
 
-        $image->data->set('attributes', $attributes);
+        if ($classes !== '') {
+            $image->data->set('attributes', ['class' => $classes] + (array) $image->data->get('attributes'));
+        }
+
         $image->setTitle(null);
+
+        return $keywords;
+    }
+
+    /**
+     * An `inline` in-tree SVG standing alone in its paragraph, rendered for the swap
+     * that happens after the walk. Anything else — a remote SVG, one sharing its line
+     * with text, a file that will not parse — stays an `<img>`.
+     *
+     * @return array{0: Paragraph, 1: array{node: SvgFigure, file: string, text: string}}|null
+     */
+    private static function figure(Image $image, ?Keywords $keywords, string $docDir, int $index): ?array
+    {
+        $file = $image->data->get('doc_file', null);
+        $paragraph = $image->parent();
+
+        if ($keywords?->inline !== true || ! is_string($file) || mb_strtolower(pathinfo($file, PATHINFO_EXTENSION)) !== 'svg'
+            || ! $paragraph instanceof Paragraph || $paragraph->firstChild() !== $image || $paragraph->lastChild() !== $image) {
+            return null;
+        }
+
+        $ns = 'ds-'.substr(sha1($file), 0, 6).'-'.($index + 1).'-';
+        $svg = InlineSvg::render($file, $docDir, $ns);
+
+        if ($svg === null) {
+            return null;
+        }
+
+        return [$paragraph, ['node' => new SvgFigure($svg['html'], self::text($image), $ns, $keywords), 'file' => $file, 'text' => $svg['text']]];
     }
 
     private static function alert(BlockQuote $quote): void

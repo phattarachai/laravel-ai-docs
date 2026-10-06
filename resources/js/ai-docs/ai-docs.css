@@ -13,6 +13,22 @@
   --doc-hover: #eeeff2;
   --doc-scrim: rgb(15 17 22 / 38%);
 
+  /* Semantic tones, also the vocabulary an inlined SVG draws with —
+     `fill: var(--doc-ok-bg, #dcfce7)`. Keep in sync with TONES in
+     mermaid-theme.js (`warn` is mermaid's `decision`). @see README.md */
+  --doc-ok-bg: #dcfce7;
+  --doc-ok-line: #16a34a;
+  --doc-ok-text: #14532d;
+  --doc-warn-bg: #fef3c7;
+  --doc-warn-line: #d97706;
+  --doc-warn-text: #78350f;
+  --doc-bad-bg: #fee2e2;
+  --doc-bad-line: #dc2626;
+  --doc-bad-text: #7f1d1d;
+  --doc-actor-bg: #dbeafe;
+  --doc-actor-line: #2563eb;
+  --doc-actor-text: #1e3a8a;
+
   --doc-shell: 1480px;
   --doc-nav-w: 248px;
   --doc-toc-w: 224px;
@@ -54,6 +70,19 @@
   --doc-code-bg: #212230;
   --doc-hover: #24252f;
   --doc-scrim: rgb(0 0 0 / 55%);
+
+  --doc-ok-bg: #0b2f1a;
+  --doc-ok-line: #22c55e;
+  --doc-ok-text: #bbf7d0;
+  --doc-warn-bg: #3b2408;
+  --doc-warn-line: #f59e0b;
+  --doc-warn-text: #fde68a;
+  --doc-bad-bg: #3d1113;
+  --doc-bad-line: #ef4444;
+  --doc-bad-text: #fecaca;
+  --doc-actor-bg: #16244d;
+  --doc-actor-line: #60a5fa;
+  --doc-actor-text: #bfdbfe;
 }
 
 /* ---- top bar ---------------------------------------------------------- */
@@ -426,6 +455,35 @@
 .doc-wide {
   position: relative;
   margin: 0 0 16px;
+}
+
+/* `wide` — one figure takes the outline rail's width as well as the column. The
+   variable is zero once the rail is collapsed, and the narrow block below drops
+   the bleed when the rail becomes a drawer. The figure sits over the sticky
+   outline while it scrolls past, so it carries the page background. */
+.doc-prose > .doc-bleed,
+.doc-prose > p:has(> img.doc-bleed:only-child) {
+  z-index: 3;
+  width: calc(100% + var(--doc-toc-w));
+  max-width: none;
+  background: var(--doc-bg);
+}
+
+.doc-prose > p:has(> img.doc-bleed:only-child) {
+  position: relative;
+}
+
+/* An inlined SVG — the viewBox keeps the ratio, the column sets the width. It
+   inherits the panel's font and `--doc-*` tokens, which an <img> never could. */
+.doc-svg > svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  color: var(--doc-text);
+}
+
+.doc-svg a {
+  cursor: pointer;
 }
 
 .doc-wide > :last-child {
@@ -1161,6 +1219,11 @@
   .drawer-toc .doc-scrim {
     display: block;
   }
+
+  .doc-prose > .doc-bleed,
+  .doc-prose > p:has(> img.doc-bleed:only-child) {
+    width: 100%;
+  }
 }
 
 @media (max-width: 860px) {
@@ -1190,6 +1253,16 @@
 
   .doc-crumb {
     display: none;
+  }
+
+  /* A wide drawing shrunk to a phone is unreadable; keep it legible and let it
+     scroll sideways, with full screen a tap away. */
+  .doc-bleed .doc-svg {
+    overflow-x: auto;
+  }
+
+  .doc-bleed .doc-svg > svg {
+    min-width: 640px;
   }
 
   /* Two things competing for the same narrow row; the switcher is the useful one. */
@@ -1230,6 +1303,18 @@
     --doc-code-bg: #f5f6f8;
     --doc-nav-bg: #f5f6f8;
     --doc-table-size: 12px;
+    --doc-ok-bg: #dcfce7;
+    --doc-ok-line: #16a34a;
+    --doc-ok-text: #14532d;
+    --doc-warn-bg: #fef3c7;
+    --doc-warn-line: #d97706;
+    --doc-warn-text: #78350f;
+    --doc-bad-bg: #fee2e2;
+    --doc-bad-line: #dc2626;
+    --doc-bad-text: #7f1d1d;
+    --doc-actor-bg: #dbeafe;
+    --doc-actor-line: #2563eb;
+    --doc-actor-text: #1e3a8a;
 
     min-height: 0;
   }
@@ -1298,12 +1383,18 @@
     max-width: none;
   }
 
+  .doc-prose > .doc-bleed,
+  .doc-prose > p:has(> img.doc-bleed:only-child) {
+    width: auto;
+  }
+
   /* Never slice a code block, table, quote, diagram or image across a page. */
   .doc-prose pre,
   .doc-prose table,
   .doc-prose blockquote,
   .doc-prose img,
-  .doc-mermaid {
+  .doc-mermaid,
+  .doc-svg {
     break-inside: avoid;
   }
 
@@ -1313,7 +1404,8 @@
      preserving its aspect ratio — instead of overflowing or forcing a near-blank
      page. `break-inside: avoid` above still keeps each one whole. */
   .doc-prose img,
-  .doc-mermaid svg {
+  .doc-mermaid svg,
+  .doc-svg > svg {
     width: auto;
     height: auto;
     max-width: 100%;
@@ -1323,8 +1415,13 @@
 
   /* Let a scaled diagram breathe to the page edge rather than clip in its own
      scroll box, and centre it in the width it no longer fills. */
-  .doc-mermaid {
+  .doc-mermaid,
+  .doc-bleed .doc-svg {
     overflow: visible;
+  }
+
+  .doc-bleed .doc-svg > svg {
+    min-width: 0;
   }
 
   /* Per-element opt-in: `![alt](img "print-70")` or a ```mermaid print-70``` fence
@@ -1332,32 +1429,38 @@
      — smaller for one stranded under a heading, or `print-100` to leave a big one
      at full size. @see README.md */
   .doc-prose img.doc-print-50,
-  .doc-mermaid.doc-print-50 svg {
+  .doc-mermaid.doc-print-50 svg,
+  .doc-svg.doc-print-50 > svg {
     max-height: 132mm;
   }
 
   .doc-prose img.doc-print-60,
-  .doc-mermaid.doc-print-60 svg {
+  .doc-mermaid.doc-print-60 svg,
+  .doc-svg.doc-print-60 > svg {
     max-height: 158mm;
   }
 
   .doc-prose img.doc-print-70,
-  .doc-mermaid.doc-print-70 svg {
+  .doc-mermaid.doc-print-70 svg,
+  .doc-svg.doc-print-70 > svg {
     max-height: 185mm;
   }
 
   .doc-prose img.doc-print-80,
-  .doc-mermaid.doc-print-80 svg {
+  .doc-mermaid.doc-print-80 svg,
+  .doc-svg.doc-print-80 > svg {
     max-height: 211mm;
   }
 
   .doc-prose img.doc-print-90,
-  .doc-mermaid.doc-print-90 svg {
+  .doc-mermaid.doc-print-90 svg,
+  .doc-svg.doc-print-90 > svg {
     max-height: 238mm;
   }
 
   .doc-prose img.doc-print-100,
-  .doc-mermaid.doc-print-100 svg {
+  .doc-mermaid.doc-print-100 svg,
+  .doc-svg.doc-print-100 > svg {
     max-height: none;
   }
 

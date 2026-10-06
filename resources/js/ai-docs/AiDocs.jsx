@@ -133,6 +133,26 @@ const DocProse = memo(function DocProse({ html, innerRef }) {
 })
 
 /**
+ * The markup full screen shows. An inlined SVG gets its own id prefix there: the
+ * copy in the page stays mounted underneath, and two `#marker`s on one page resolve
+ * to whichever comes first. see docs/internals.md
+ *
+ * @param {Element|null|undefined} element
+ */
+function zoomable(element) {
+  const ns = element?.dataset?.docNs
+
+  if (!ns) {
+    return element?.outerHTML ?? null
+  }
+
+  // `ds-ab12cd-1` is both the root's id and the stem of every inner one.
+  const stem = ns.replace(/-$/, '')
+
+  return element.outerHTML.split(stem).join(`${stem}z`)
+}
+
+/**
  * see README.md
  *
  * @param {string} base panel root URL
@@ -224,7 +244,7 @@ export default function AiDocs({ base = '/docs', brand, groups, page = null, pan
     const opener = event.target.closest?.('.doc-zoom')
 
     if (opener) {
-      setZoom(opener.nextElementSibling?.outerHTML ?? null)
+      setZoom(zoomable(opener.nextElementSibling))
 
       return
     }
