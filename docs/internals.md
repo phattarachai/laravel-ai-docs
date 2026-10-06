@@ -82,6 +82,24 @@ Mermaid measures a label's width using the configured font *before* the real fon
 node clipped its own text ("Issue RegistrationCc"). `mermaid-theme.js` deliberately sets neither;
 the palette does not need them.
 
+## A failed render is retried once when the source parses
+
+`mermaid.render()` lazy-imports the diagram's chunk on first use, and in a Vite build that import
+goes through Vite's preload helper, which also preloads the chunk's CSS dependencies. If one of those
+`<link rel="stylesheet">` preloads fails, the helper rejects **that one** import — and remembers the
+URL, so it never tries it again. The first diagram on the page fell back to its raw source while every
+later one, and the same one after a scheme toggle, rendered fine.
+
+The real-world trigger was a host that built its assets with `.env.production` (an absolute
+`ASSET_URL` for another server) and served them locally: Blade's `<link>` used the local URL, the
+preload list used the baked one, and only the CSS preload failed. Any flaky or blocked stylesheet does
+the same.
+
+So `draw()` treats a render failure as final only when `mermaid.parse(source, { suppressErrors: true })`
+also fails; a source that parses gets one more render, which succeeds because the import is now
+cached. Every failed attempt is logged with `console.warn` and its diagram id — the fallback alone said
+nothing, which is why this took a fresh module realm to diagnose.
+
 ## The zoom button is a sibling of the diagram, not a child
 
 `MermaidRenderer` emits `<div class="doc-wide"><button class="doc-zoom">…<div class="doc-mermaid">`.

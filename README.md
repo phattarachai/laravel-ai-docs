@@ -134,6 +134,7 @@ render cache with the rest of the page.
 that has one. Both schemes are themed to match the panel, and a small semantic palette is available to opt into with
 `class Node decision` or `Node:::decision` — `decision`, `ok`, `bad`, `actor`.
 Diagrams lay out with dagre on either major; mermaid 12's ELK default is not used.
+A fence mermaid cannot draw shows its source instead, with the reason in the browser console.
 
 **GitHub alerts** — `> [!NOTE]`, `> [!TIP]`, `> [!IMPORTANT]`, `> [!WARNING]`, `> [!CAUTION]` render as titled
 callouts, with the title translated.

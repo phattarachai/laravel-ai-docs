@@ -20,6 +20,34 @@ function fallback(source) {
   return pre
 }
 
+async function attempt(mermaid, source) {
+  const id = `doc-mermaid-${(sequence += 1)}`
+
+  try {
+    return await mermaid.render(id, source)
+  } catch (error) {
+    document.getElementById(`d${id}`)?.remove()
+    console.warn(`[ai-docs] mermaid could not render ${id}.`, error)
+
+    throw error
+  }
+}
+
+/**
+ * see docs/internals.md — "A failed render is retried once when the source parses"
+ */
+async function draw(mermaid, source) {
+  try {
+    return await attempt(mermaid, source)
+  } catch (error) {
+    if (!(await mermaid.parse(source, { suppressErrors: true }))) {
+      throw error
+    }
+
+    return attempt(mermaid, source)
+  }
+}
+
 /**
  * see README.md
  *
@@ -58,10 +86,9 @@ export function useMermaid(containerRef, slug, scheme) {
           }
 
           const source = node.getAttribute('data-src') ?? ''
-          const id = `doc-mermaid-${(sequence += 1)}`
 
           try {
-            const { svg, bindFunctions } = await mermaid.render(id, source)
+            const { svg, bindFunctions } = await draw(mermaid, source)
 
             if (cancelled) {
               return
@@ -71,13 +98,13 @@ export function useMermaid(containerRef, slug, scheme) {
             node.dataset.drawn = theme
             bindFunctions?.(node)
           } catch {
-            document.getElementById(`d${id}`)?.remove()
             node.replaceChildren(fallback(source))
             node.dataset.drawn = theme
           }
         }
       })
-      .catch(() => {
+      .catch((error) => {
+        console.warn('[ai-docs] mermaid could not be loaded; showing diagram sources instead.', error)
         nodes.forEach((node) => node.replaceChildren(fallback(node.getAttribute('data-src') ?? '')))
       })
 
