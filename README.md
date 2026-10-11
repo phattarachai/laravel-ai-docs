@@ -34,7 +34,7 @@ person appears in them.</sub>
 under `.doc-root`, imported by the module itself — so it renders correctly in a host with any CSS setup, or none.
 
 Run `php artisan ai-docs:doctor` at any point: it checks the routes, the gate, the docs root, the published page, the
-Vite alias and `mermaid`, and tells you which one is missing.
+Vite alias (in `vite.config.js` or `.ts`) and `mermaid`, and tells you which one is missing.
 
 ## Install
 
@@ -46,7 +46,7 @@ npm install mermaid
 ```
 
 The `ai-docs-inertia` tag is **not** optional: it publishes one file, `resources/js/pages/AiDocs.jsx`, and it has to
-live there because `app.jsx`'s `import.meta.glob('./pages/**/*.jsx')` never leaves that directory. The stub is a dozen
+live there because the host resolves Inertia pages from `resources/js/pages` and never looks outside it. The stub is a dozen
 lines — a `<Head>` and `<AiDocs {...props} />`. The module itself stays in `vendor/` and is reached through an alias, so
 there is no second copy to drift out of sync.
 
@@ -84,6 +84,31 @@ npm run build
 ```
 
 Open `/docs`.
+
+### On the Laravel React starter kit
+
+Before `npm run build`, the kit needs two more edits, because it is TypeScript and wraps every page in its own shell:
+
+- `resources/views/app.blade.php` preloads the current page as `.tsx`, which fails on `AiDocs.jsx` with
+  *Unable to locate file in Vite manifest*. Load the entry point alone:
+
+  ```blade
+  @vite(['resources/css/app.css', 'resources/js/app.tsx'])
+  ```
+
+- `resources/js/app.tsx` gives every page the kit's `AppLayout`, so the panel would sit inside a second sidebar. Give
+  `AiDocs` no layout, next to `welcome`:
+
+  ```tsx
+  layout: (name) => {
+      switch (true) {
+          case name === 'welcome':
+          case name === 'AiDocs':
+              return null;
+          // …
+  ```
+
+The alias snippet above works unchanged in the kit's `vite.config.ts`.
 
 ## Access
 

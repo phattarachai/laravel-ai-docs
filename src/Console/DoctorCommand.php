@@ -44,7 +44,7 @@ final class DoctorCommand extends Command
             ? null
             : 'Run `php artisan vendor:publish --tag=ai-docs-inertia`.');
 
-        $failures += $this->check('Vite alias @ai-docs', fn (): ?string => $this->fileContains(base_path('vite.config.js'), '@ai-docs')
+        $failures += $this->check('Vite alias @ai-docs', fn (): ?string => $this->viteConfigHasAlias()
             ? null
             : 'Add a resolve.alias entry for @ai-docs — see the package README.');
 
@@ -125,6 +125,21 @@ final class DoctorCommand extends Command
         $this->line('  <fg=gray>'.AiDocs::url()." · {$root} · {$pages} pages</>");
 
         return null;
+    }
+
+    /**
+     * The React starter kit ships `vite.config.ts`, so every extension Vite
+     * itself loads counts.
+     */
+    private function viteConfigHasAlias(): bool
+    {
+        foreach (['js', 'ts', 'mjs', 'mts'] as $extension) {
+            if ($this->fileContains(base_path("vite.config.{$extension}"), '@ai-docs')) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function fileContains(string $path, string $needle): bool
