@@ -24,7 +24,7 @@
   <rect id="box" class="card" x="10" y="10" width="200" height="80" fill="url(#bG)" onclick="alert('click')"/>
   <line x1="210" y1="50" x2="400" y2="50" stroke="#999" marker-end="url(#arrow)"/>
   <use href="#box" x="400"/>
-  <a href="guides/labels.md#front-matter"><text x="20" y="50" class="label">ระบบ MJ <tspan>Labels card</tspan></text></a>
+  <a href="guides/labels.md#front-matter"><text x="20" y="50" class="label">ระบบหลัก <tspan>Labels card</tspan></text></a>
   <a xlink:href="javascript:alert('xlink')"><text x="20" y="120">Bad link</text></a>
   <a href="https://evil.test/away"><text x="20" y="150">Away</text></a>
   <a href="#flow"><text x="20" y="180">Page anchor</text></a>

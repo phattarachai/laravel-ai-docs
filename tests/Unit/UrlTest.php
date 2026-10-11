@@ -6,10 +6,10 @@ use Illuminate\Support\Facades\URL;
 use Phattarachai\AiDocs\AiDocs;
 
 it('folds a subfolder base path into doc urls', function (): void {
-    URL::forceRootUrl('http://localhost/etax/public');
+    URL::forceRootUrl('http://localhost/myapp/public');
 
-    expect(AiDocs::url())->toBe('/etax/public/docs');
-    expect(AiDocs::url('guides/labels'))->toBe('/etax/public/docs/guides/labels');
+    expect(AiDocs::url())->toBe('/myapp/public/docs');
+    expect(AiDocs::url('guides/labels'))->toBe('/myapp/public/docs/guides/labels');
 });
 
 it('stays at the domain root when the app is not in a subfolder', function (): void {
@@ -20,9 +20,9 @@ it('stays at the domain root when the app is not in a subfolder', function (): v
 });
 
 it('sends the brand link back to the app root, not the domain root', function (): void {
-    URL::forceRootUrl('http://localhost/etax/public');
+    URL::forceRootUrl('http://localhost/myapp/public');
 
-    expect(AiDocs::brand()['url'])->toBe('/etax/public');
+    expect(AiDocs::brand()['url'])->toBe('/myapp/public');
 
     URL::forceRootUrl('http://localhost');
 
@@ -30,10 +30,10 @@ it('sends the brand link back to the app root, not the domain root', function ()
 });
 
 it('folds a root-relative logo into the subfolder but leaves an absolute one alone', function (): void {
-    URL::forceRootUrl('http://localhost/etax/public');
+    URL::forceRootUrl('http://localhost/myapp/public');
 
     config()->set('ai-docs.brand.logo', '/img/mark.svg');
-    expect(AiDocs::brand()['logo'])->toBe('/etax/public/img/mark.svg');
+    expect(AiDocs::brand()['logo'])->toBe('/myapp/public/img/mark.svg');
 
     config()->set('ai-docs.brand.logo', 'https://cdn.test/mark.svg');
     expect(AiDocs::brand()['logo'])->toBe('https://cdn.test/mark.svg');

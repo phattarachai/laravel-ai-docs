@@ -23,7 +23,7 @@ person appears in them.</sub>
 
 ## Requirements — read these first
 
-- **PHP 8.4+, Laravel 11/12/13.**
+- **PHP 8.4+, Laravel 12/13.**
 - **Inertia v2/v3 + React 18/19** in the host app. The panel is an Inertia page, not a Blade view.
 - The host app **builds its own assets** — nothing is precompiled or published as a bundle.
 - **`mermaid` 11 or 12 as an npm dependency.** It is a peer dependency, lazy-imported; without it diagram fences degrade to
@@ -199,7 +199,7 @@ Mermaid suits flows. A landscape map with status pills, coloured connectors and 
 Keep the `.svg` beside the markdown and add `inline` to the image title:
 
 ```markdown
-![MJ system landscape](mj-systems.svg "inline wide")
+![System landscape](systems.svg "inline wide")
 ```
 
 The drawing is written into the page instead of being loaded through `<img>`, which changes four things:
@@ -207,7 +207,7 @@ The drawing is written into the page instead of being loaded through `<img>`, wh
 - It **uses the panel's font**. Leave `font-family` off your `<text>` and Thai labels match the prose around them. An
   `<img>` SVG can't load web fonts.
 - It **can follow the light/dark toggle** through the panel's CSS custom properties, if you draw with them (below).
-- **Links work.** `<a href="sap-etax.md#flow">` around a card is resolved like a markdown link, across panels too, and
+- **Links work.** `<a href="billing.md#flow">` around a card is resolved like a markdown link, across panels too, and
   opens that doc in place. An `<a href="#heading">` jumps to a heading on the same page.
 - It **gets the same zoom button and `print-NN` sizing** as a mermaid diagram. `wide` and `print-NN` combine with
   `inline`, e.g. `"inline wide print-80"`.
@@ -255,13 +255,13 @@ hand-drawn and generated diagrams on one page agree.
       <path d="M0,0 L10,5 L0,10 z" style="fill: var(--doc-muted, #71757e)"/>
     </marker>
   </defs>
-  <a href="sap-etax.md">
+  <a href="billing.md">
     <rect x="10" y="30" width="130" height="60" rx="10"
           style="fill: var(--doc-ok-bg, #dcfce7); stroke: var(--doc-ok-line, #16a34a)"/>
-    <text x="75" y="65" text-anchor="middle" style="fill: var(--doc-ok-text, #14532d)">sap-etax</text>
+    <text x="75" y="65" text-anchor="middle" style="fill: var(--doc-ok-text, #14532d)">billing</text>
   </a>
   <path d="M140,60 H220" marker-end="url(#arrow)" style="stroke: var(--doc-line, #e6e7ea)"/>
-  <text x="270" y="65" text-anchor="middle" style="fill: var(--doc-text, #1c1d21)">BBL e-Tax</text>
+  <text x="270" y="65" text-anchor="middle" style="fill: var(--doc-text, #1c1d21)">Payment gateway</text>
 </svg>
 ```
 
