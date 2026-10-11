@@ -11,9 +11,9 @@ it('inlines an svg marked inline instead of loading it through an img', function
     $html = Docs::page('diagrams')['html'];
 
     expect(substr_count($html, '<div class="doc-svg'))->toBe(2)
-        ->and($html)->toContain('<div class="doc-wide doc-bleed"><button type="button" class="doc-zoom" aria-label="Full screen"></button><div class="doc-svg doc-print-80" role="figure" aria-label="MJ systems"')
-        ->toContain('aria-label="MJ systems &quot;again&quot;"')
-        ->toContain('ระบบ MJ')
+        ->and($html)->toContain('<div class="doc-wide doc-bleed"><button type="button" class="doc-zoom" aria-label="Full screen"></button><div class="doc-svg doc-print-80" role="figure" aria-label="System map"')
+        ->toContain('aria-label="System map &quot;again&quot;"')
+        ->toContain('ระบบหลัก')
         ->not->toContain('<p><div');
 });
 
@@ -132,7 +132,7 @@ it('refuses an svg that declares entities', function (): void {
 it('indexes the drawing\'s text under the section that holds it', function (): void {
     $sections = collect(Docs::sections('diagrams'))->keyBy('id');
 
-    expect($sections['landscape']['text'])->toContain('ระบบ MJ')->toContain('Labels card')
+    expect($sections['landscape']['text'])->toContain('ระบบหลัก')->toContain('Labels card')
         ->and($sections['not-inline']['text'])->not->toContain('Labels card');
 });
 

@@ -17,11 +17,11 @@ function within(string|false $absolute, string|false $root): ?string
 }
 
 it('resolves a Windows realpath under a forward-slash root', function (): void {
-    expect(within('C:\\laragon\\etax\\.ai\\documents\\user-workflow.md', 'C:\\laragon\\etax\\.ai\\documents'))
+    expect(within('C:\\laragon\\myapp\\.ai\\documents\\user-workflow.md', 'C:\\laragon\\myapp\\.ai\\documents'))
         ->toBe('user-workflow.md');
 
-    expect(within('C:\\laragon\\etax\\.ai\\documents\\flows\\1-sap-fetch.md', 'C:\\laragon\\etax\\.ai\\documents'))
-        ->toBe('flows/1-sap-fetch.md');
+    expect(within('C:\\laragon\\myapp\\.ai\\documents\\flows\\1-fetch-orders.md', 'C:\\laragon\\myapp\\.ai\\documents'))
+        ->toBe('flows/1-fetch-orders.md');
 });
 
 it('still resolves a POSIX realpath', function (): void {
@@ -30,7 +30,7 @@ it('still resolves a POSIX realpath', function (): void {
 });
 
 it('rejects a path outside the root or a failed realpath', function (): void {
-    expect(within('C:\\laragon\\etax\\.ai\\other\\x.md', 'C:\\laragon\\etax\\.ai\\documents'))->toBeNull();
-    expect(within(false, 'C:\\laragon\\etax\\.ai\\documents'))->toBeNull();
+    expect(within('C:\\laragon\\myapp\\.ai\\other\\x.md', 'C:\\laragon\\myapp\\.ai\\documents'))->toBeNull();
+    expect(within(false, 'C:\\laragon\\myapp\\.ai\\documents'))->toBeNull();
     expect(within('/srv/app/.ai/documents/a.md', false))->toBeNull();
 });

@@ -157,7 +157,7 @@ final class AiDocs
      * A root-relative path — a pathname, never a full URL, because the React client
      * treats it as one (active-link matching against `location.pathname`, Inertia
      * visits). Resolved through Laravel's `url()` so a subfolder deploy (the app
-     * served from `/etax/public`, say) is folded into the path; at the domain root
+     * served from `/myapp/public`, say) is folded into the path; at the domain root
      * this is still just `/docs`.
      *
      * @param  Panel  $panel
@@ -211,7 +211,7 @@ final class AiDocs
 
     /**
      * A root-relative brand link or logo is relative to the *app*, not the domain — the default
-     * `/` means "back to the app", and under a subfolder deploy that is `/sap-wms/public`, not
+     * `/` means "back to the app", and under a subfolder deploy that is `/myapp/public`, not
      * the host root. Folded through `url()` like {@see self::urlOf()} does for doc links.
      * Anything already absolute is left alone: `https://…`, a protocol-relative `//cdn/…`, a
      * `data:` URI.
