@@ -521,12 +521,41 @@
   color: var(--doc-text);
 }
 
-.doc-copypath {
-  display: grid;
-  place-items: center;
+.doc-pagetools {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   position: absolute;
   top: 0;
   right: 0;
+}
+
+.doc-updated {
+  color: var(--doc-muted);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.doc-page.has-updated .doc-prose h1 {
+  padding-right: 240px;
+}
+
+@media (max-width: 640px) {
+  .doc-page.has-updated .doc-pagetools {
+    position: static;
+    justify-content: flex-end;
+    margin-bottom: 8px;
+  }
+
+  .doc-page.has-updated .doc-prose h1 {
+    padding-right: 0;
+  }
+}
+
+.doc-copypath {
+  display: grid;
+  place-items: center;
+  flex: none;
   width: 30px;
   height: 30px;
   padding: 0;

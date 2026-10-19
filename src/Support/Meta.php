@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Phattarachai\AiDocs\Support;
 
+use Carbon\Exceptions\InvalidFormatException;
+use Illuminate\Support\Carbon;
 use Symfony\Component\Yaml\Exception\ParseException;
 use Symfony\Component\Yaml\Yaml;
 
@@ -33,6 +35,22 @@ final class Meta
             'navExplicit' => $nav !== '',
             'order' => is_numeric($order) ? (int) $order : null,
         ];
+    }
+
+    /**
+     * see README.md — "Writing docs"
+     */
+    public static function updated(string $absolute): ?string
+    {
+        [$data] = self::split((string) @file_get_contents($absolute, length: self::HEAD_BYTES));
+        $value = $data['updated'] ?? null;
+
+        return match (true) {
+            is_int($value) => self::fromTimestamp($value),
+            is_string($value) && preg_match('/^\d{4}-\d{2}-\d{2}$/', trim($value)) === 1 => trim($value),
+            is_string($value) && trim($value) !== '' => self::fromString(trim($value)),
+            default => null,
+        };
     }
 
     public static function shorten(string $title): string
@@ -114,6 +132,29 @@ final class Meta
         }
 
         return is_array($parsed) ? $parsed : [];
+    }
+
+    private static function fromTimestamp(int $timestamp): string
+    {
+        return $timestamp % 86400 === 0
+            ? gmdate('Y-m-d', $timestamp)
+            : Carbon::createFromTimestamp($timestamp)->setTimezone(self::timezone())->toIso8601String();
+    }
+
+    private static function fromString(string $value): ?string
+    {
+        try {
+            return Carbon::parse($value, self::timezone())->setTimezone(self::timezone())->toIso8601String();
+        } catch (InvalidFormatException) {
+            return null;
+        }
+    }
+
+    private static function timezone(): string
+    {
+        $timezone = config('app.timezone');
+
+        return is_string($timezone) && $timezone !== '' ? $timezone : 'UTC';
     }
 
     private static function h1(string $body): string

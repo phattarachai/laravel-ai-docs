@@ -55,3 +55,20 @@ it('reads a heading whose emoji carries a 0x85 byte whole', function (): void {
 
     unlink($file);
 });
+
+it('reads the updated front matter as a date or a date-time in the app timezone', function (string $yaml, ?string $expected): void {
+    config()->set('app.timezone', 'Asia/Bangkok');
+    $file = tempnam(sys_get_temp_dir(), 'meta');
+    file_put_contents($file, "---\n{$yaml}\n---\n# Page\n");
+
+    expect(Meta::updated($file))->toBe($expected);
+
+    unlink($file);
+})->with([
+    'date and time' => ['updated: 2026-10-19 16:30', '2026-10-19T16:30:00+07:00'],
+    'date only' => ['updated: 2026-10-19', '2026-10-19'],
+    'quoted, with an offset' => ["updated: '2026-10-19T09:30:00Z'", '2026-10-19T16:30:00+07:00'],
+    'yaml timestamp' => ['updated: 2026-10-19T09:30:00Z', '2026-10-19T16:30:00+07:00'],
+    'not a date' => ['updated: soon', null],
+    'missing' => ['nav: Page', null],
+]);
