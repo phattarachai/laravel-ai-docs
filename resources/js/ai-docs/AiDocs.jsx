@@ -11,6 +11,7 @@ import { DocZoom } from './DocZoom'
 import { useMermaid } from './Mermaid'
 import { readPanes, writePanes } from './panes'
 import { readScheme, writeScheme } from './scheme'
+import { formatUpdated } from './dates'
 import { DEFAULT_STRINGS, StringsContext, translate } from './strings'
 
 const NO_GROUPS = []
@@ -160,9 +161,10 @@ function zoomable(element) {
  * @param {Array<{key: string, label: string, items: Array<{slug: string, title: string, nav: string}>, groups: Array<object>}>} groups nested; `groups` recurses
  * @param {Array<{key: string, label: string, url: string, current: boolean}>} panels sibling trees; empty when there is only one
  * @param {Record<string, string>|undefined} strings copy overrides, from `trans('ai-docs::ui')`
- * @param {{slug: string, title: string, path: string, html: string, toc: Array<{id: string, text: string, level: number}>}|null} page
+ * @param {{slug: string, title: string, path: string, updated: string|null, html: string, toc: Array<{id: string, text: string, level: number}>}|null} page
+ * @param {string|undefined} locale BCP 47 tag for dates, from `app()->getLocale()`
  */
-export default function AiDocs({ base = '/docs', brand, groups, page = null, panels, strings }) {
+export default function AiDocs({ base = '/docs', brand, groups, page = null, panels, strings, locale }) {
   const tree = groups ?? NO_GROUPS
   const sections = panels ?? NO_PANELS
   const name = brand?.name ?? 'Docs'
@@ -415,16 +417,23 @@ export default function AiDocs({ base = '/docs', brand, groups, page = null, pan
 
           <main className="doc-main">
             {page ? (
-              <div className="doc-page" onClick={intercept}>
-                <button
-                  type="button"
-                  className="doc-copypath"
-                  onClick={copyPath}
-                  title={page.path}
-                  aria-label={t('page.copyPath', { path: page.path })}
-                >
-                  <CopyIcon />
-                </button>
+              <div className={page.updated ? 'doc-page has-updated' : 'doc-page'} onClick={intercept}>
+                <div className="doc-pagetools">
+                  {page.updated && (
+                    <time className="doc-updated" dateTime={page.updated}>
+                      {t('page.updated', { date: formatUpdated(page.updated, locale) })}
+                    </time>
+                  )}
+                  <button
+                    type="button"
+                    className="doc-copypath"
+                    onClick={copyPath}
+                    title={page.path}
+                    aria-label={t('page.copyPath', { path: page.path })}
+                  >
+                    <CopyIcon />
+                  </button>
+                </div>
 
                 <DocProse html={page.html} innerRef={proseRef} />
               </div>

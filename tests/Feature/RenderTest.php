@@ -58,3 +58,10 @@ it('still rewrites links when the configured root climbs out of the project', fu
 
     expect(Docs::page('links')['html'])->toContain('href="/docs/guides/labels"');
 });
+
+it('hands the page its updated time and leaves it null without one', function (): void {
+    config()->set('app.timezone', 'Asia/Bangkok');
+
+    expect(Docs::page('guides/labels')['updated'])->toBe('2026-10-19T16:30:00+07:00')
+        ->and(Docs::page('guides/getting-started')['updated'])->toBeNull();
+});

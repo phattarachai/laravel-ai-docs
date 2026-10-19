@@ -37,6 +37,7 @@ export const DEFAULT_STRINGS = {
   'page.pathCopied': 'Path copied',
   'page.linkCopied': 'Link copied',
   'page.print': 'Print / Save as PDF',
+  'page.updated': 'Updated :date',
 
   'zoom.open': 'Full screen',
   'zoom.close': 'Esc',

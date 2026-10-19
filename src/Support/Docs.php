@@ -11,7 +11,7 @@ use Phattarachai\AiDocs\AiDocs;
 final class Docs
 {
     /**
-     * @return array{slug: string, title: string, path: string, html: string, toc: list<array{id: string, text: string, level: int}>}|null
+     * @return array{slug: string, title: string, path: string, updated: string|null, html: string, toc: list<array{id: string, text: string, level: int}>}|null
      */
     public static function page(string $slug): ?array
     {
@@ -28,6 +28,7 @@ final class Docs
             'slug' => substr($relative, 0, -3),
             'title' => DocTree::title($absolute, basename($relative)),
             'path' => AiDocs::current()['root'].'/'.$relative,
+            'updated' => Meta::updated($absolute),
             'html' => $rendered['html'],
             'toc' => $rendered['toc'],
         ];

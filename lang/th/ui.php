@@ -31,6 +31,7 @@ return [
     'page.pathCopied' => 'คัดลอก path แล้ว',
     'page.linkCopied' => 'คัดลอกลิงก์แล้ว',
     'page.print' => 'พิมพ์ / บันทึกเป็น PDF',
+    'page.updated' => 'แก้ไขล่าสุด :date',
 
     'zoom.open' => 'เต็มจอ',
     'zoom.close' => 'Esc',

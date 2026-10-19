@@ -335,6 +335,12 @@ flowchart LR
 | `title`   | Page title and browser tab. Defaults to the H1, then the filename                |
 | `nav`     | Sidebar label. Defaults to the shortened `title`                                 |
 | `order`   | Sort position within its group. Unset sorts as `500`                             |
+| `updated` | Shown beside the page title as "Updated …", formatted for the app locale         |
+
+`updated` is when the page's content last changed, written by its author: `2026-10-19 16:30` (read in
+`app.timezone`), a date alone, or an ISO 8601 time with its offset. It is front matter rather than git history
+because a release built from a shallow clone or a `git archive` has no per-file history to read. A page without it
+shows no date.
 
 Within a group, pages sort by `order`, then `index.md` first, then nav label. The landing page is `index.md` at the
 root of the docs folder, or the first page of the first group if there is none.
