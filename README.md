@@ -352,6 +352,7 @@ flowchart LR
 | `nav`     | Sidebar label. Defaults to the shortened `title`                                 |
 | `order`   | Sort position within its group. Unset sorts as `500`                             |
 | `updated` | Shown beside the page title as "Updated …", formatted for the app locale         |
+| `group`   | On a folder's `index.md` only: the folder's sidebar label, in place of the folder name |
 
 `updated` is when the page's content last changed, written by its author: `2026-10-19 16:30` (read in
 `app.timezone`), a date alone, or an ISO 8601 time with its offset. It is front matter rather than git history

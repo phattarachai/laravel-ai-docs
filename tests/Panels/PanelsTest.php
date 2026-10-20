@@ -96,3 +96,10 @@ it('groups a folder whose name is all digits instead of tripping over the intege
         ->assertOk()
         ->assertInertia(fn ($page) => $page->where('page.path', '.ai/tasks/2609/31-migrate/todo.md'));
 });
+
+it('labels a folder from its index page\'s group front matter, else from the folder name', function (): void {
+    $labels = AiDocs::within('tasks', fn (): array => array_column(DocTree::groups(), 'label', 'key'));
+
+    expect($labels['cycle-1'])->toBe('รอบที่ 1')
+        ->and($labels['holder'])->toBe('Holder');
+});

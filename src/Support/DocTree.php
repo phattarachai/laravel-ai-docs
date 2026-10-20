@@ -172,13 +172,24 @@ final class DocTree
 
         return [
             'key' => $directory,
-            'label' => ucfirst(str_replace(['-', '_'], ' ', $name)),
+            'label' => self::label($directory, $name),
             'items' => self::items($pages[$directory] ?? []),
             'groups' => array_map(
                 fn (string $child): array => self::branch($child, $pages, $directories),
                 self::children($directory, $directories),
             ),
         ];
+    }
+
+    /**
+     * see README.md — "Writing docs": a folder's `index.md` may name the folder with `group:`.
+     */
+    private static function label(string $directory, string $name): string
+    {
+        $index = AiDocs::root().'/'.$directory.'/index.md';
+        $group = is_file($index) ? Meta::group($index) : '';
+
+        return $group !== '' ? $group : ucfirst(str_replace(['-', '_'], ' ', $name));
     }
 
     /**

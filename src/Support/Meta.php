@@ -40,6 +40,16 @@ final class Meta
     /**
      * see README.md — "Writing docs"
      */
+    public static function group(string $absolute): string
+    {
+        [$data] = self::split((string) @file_get_contents($absolute, length: self::HEAD_BYTES));
+
+        return self::string($data, 'group');
+    }
+
+    /**
+     * see README.md — "Writing docs"
+     */
     public static function updated(string $absolute): ?string
     {
         [$data] = self::split((string) @file_get_contents($absolute, length: self::HEAD_BYTES));
