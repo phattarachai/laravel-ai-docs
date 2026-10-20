@@ -1506,3 +1506,57 @@
     word-break: break-all;
   }
 }
+
+/* ---- embed ------------------------------------------------------------ */
+
+/* `?embed=1`: the page alone, inside the host app's iframe. see README.md — "Embed" */
+.doc-root.is-embed {
+  --doc-top: 0px;
+}
+
+.doc-root.is-embed .doc-body {
+  display: block;
+  max-width: none;
+}
+
+.doc-root.is-embed .doc-main {
+  padding: 16px 18px 48px;
+}
+
+.doc-root.is-embed .doc-prose > * {
+  max-width: none;
+}
+
+.doc-root.is-embed .doc-prose h1 {
+  font-size: 22px;
+}
+
+.doc-root.is-embed .doc-page.has-updated .doc-pagetools {
+  position: static;
+  justify-content: flex-start;
+  margin-bottom: 4px;
+}
+
+.doc-root.is-embed .doc-page.has-updated .doc-prose h1 {
+  padding-right: 0;
+}
+
+.doc-root.is-embed .doc-scrim {
+  display: none;
+}
+
+/* The heading a link points at flashes, so a reader landing mid-page finds it. */
+.doc-prose :is(h2, h3, h4):target {
+  animation: doc-target 2.4s ease-out;
+}
+
+@keyframes doc-target {
+  0%,
+  40% {
+    background: color-mix(in oklab, var(--doc-accent) 16%, transparent);
+  }
+
+  100% {
+    background: transparent;
+  }
+}

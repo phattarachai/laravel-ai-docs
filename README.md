@@ -302,6 +302,22 @@ fights the host app's own theme state.
 self-invalidating. Edit a file and reload; there is nothing to warm at deploy and nothing to clear. Set
 `AI_DOCS_CACHE=false` while writing if you prefer.
 
+### Embed
+
+Add `?embed=1` to any page URL and the panel renders that page alone: no header, sidebar, outline, search or
+copy-path button. It's meant for an iframe inside your own app, such as a help pane beside the screen it explains,
+with a link out to the full page.
+
+- `?scheme=light|dark` picks the colour scheme; it defaults to light. The scheme saved for the full panel is ignored,
+  so the pane matches your app rather than the docs.
+- A link to another page in the panel stays in the iframe and keeps `embed` and `scheme`.
+- On load, and after every link followed inside it, the page posts
+  `{type: 'ai-docs:page', title, url}` to its parent at the same origin. `url` is the full-page address with
+  the embed params removed and the heading kept, ready to use for an "open full page" link.
+- A heading reached by `#anchor` flashes briefly, in the full panel too, so a reader landing mid-page can find it.
+
+Access is the same gate as the panel; the iframe needs a same-origin page, which a default Laravel app allows.
+
 ## Writing docs
 
 Plain markdown works with no front matter at all. When there is none, the nav label is the H1, cut at the first

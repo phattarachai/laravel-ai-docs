@@ -51,3 +51,14 @@ it('keeps the search index behind the gate', function (): void {
 
     get(route('ai-docs.search'), ['Accept' => 'application/json'])->assertForbidden();
 });
+
+it('tells the client to render the page alone when asked to embed it', function (): void {
+    actingAs(adUser())
+        ->get(route('ai-docs.index', ['path' => 'guides/getting-started', 'embed' => 1]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->where('embed', true));
+
+    actingAs(adUser())
+        ->get(route('ai-docs.index', ['path' => 'guides/getting-started']))
+        ->assertInertia(fn ($page) => $page->where('embed', false));
+});
