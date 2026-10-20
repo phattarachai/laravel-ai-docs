@@ -10,9 +10,12 @@ import { DocToc } from './DocToc'
 import { DocZoom } from './DocZoom'
 import { useMermaid } from './Mermaid'
 import { readPanes, writePanes } from './panes'
+import { embedScheme, followHash, useEmbedReport } from './embed'
 import { readScheme, writeScheme } from './scheme'
 import { formatUpdated } from './dates'
 import { DEFAULT_STRINGS, StringsContext, translate } from './strings'
+
+followHash()
 
 const NO_GROUPS = []
 const NO_PANELS = []
@@ -163,8 +166,18 @@ function zoomable(element) {
  * @param {Record<string, string>|undefined} strings copy overrides, from `trans('ai-docs::ui')`
  * @param {{slug: string, title: string, path: string, updated: string|null, html: string, toc: Array<{id: string, text: string, level: number}>}|null} page
  * @param {string|undefined} locale BCP 47 tag for dates, from `app()->getLocale()`
+ * @param {boolean|undefined} embed `?embed=1`: the page alone, for an iframe in the host app. see README.md — "Embed"
  */
-export default function AiDocs({ base = '/docs', brand, groups, page = null, panels, strings, locale }) {
+export default function AiDocs({
+  base = '/docs',
+  brand,
+  groups,
+  page = null,
+  panels,
+  strings,
+  locale,
+  embed = false,
+}) {
   const tree = groups ?? NO_GROUPS
   const sections = panels ?? NO_PANELS
   const name = brand?.name ?? 'Docs'
@@ -173,7 +186,7 @@ export default function AiDocs({ base = '/docs', brand, groups, page = null, pan
   const [drawer, setDrawer] = useState(null)
   // Independent of `drawer`: this is the wide-screen column, not the phone overlay.
   const [panes, setPanes] = useState(readPanes)
-  const [scheme, setScheme] = useState(readScheme)
+  const [scheme, setScheme] = useState(() => (embed ? embedScheme() : readScheme()))
   const [finding, setFinding] = useState(false)
   const [zoom, setZoom] = useState(null)
   const [toast, setToast] = useState(null)
@@ -188,6 +201,7 @@ export default function AiDocs({ base = '/docs', brand, groups, page = null, pan
     .join(' · ')
 
   useMermaid(proseRef, page?.slug, scheme)
+  useEmbedReport(embed, page)
 
   const flash = useCallback((message) => {
     setToast(message)
@@ -199,7 +213,7 @@ export default function AiDocs({ base = '/docs', brand, groups, page = null, pan
 
   useEffect(() => {
     const keys = (event) => {
-      if (event.key === 'k' && (event.metaKey || event.ctrlKey)) {
+      if (event.key === 'k' && (event.metaKey || event.ctrlKey) && !embed) {
         event.preventDefault()
         setDrawer(null)
         setFinding((open) => !open)
@@ -216,7 +230,7 @@ export default function AiDocs({ base = '/docs', brand, groups, page = null, pan
     window.addEventListener('keydown', keys)
 
     return () => window.removeEventListener('keydown', keys)
-  }, [])
+  }, [embed])
 
   const flip = () => {
     const next = scheme === 'dark' ? 'light' : 'dark'
@@ -285,6 +299,12 @@ export default function AiDocs({ base = '/docs', brand, groups, page = null, pan
     }
 
     event.preventDefault()
+
+    if (embed) {
+      url.searchParams.set('embed', '1')
+      url.searchParams.set('scheme', scheme)
+    }
+
     router.visit(url.pathname + url.search + url.hash)
   }
 
@@ -293,146 +313,155 @@ export default function AiDocs({ base = '/docs', brand, groups, page = null, pan
   return (
     <StringsContext.Provider value={strings ?? DEFAULT_STRINGS}>
       <div
-        className={`doc-root mode-${mode} scheme-${scheme}${drawer ? ` drawer-${drawer}` : ''}${
+        className={`doc-root mode-${mode} scheme-${scheme}${embed ? ' is-embed' : ''}${drawer ? ` drawer-${drawer}` : ''}${
           panes.nav ? ' hide-nav' : ''
         }${panes.toc ? ' hide-toc' : ''}`}
         style={{ '--doc-accent': brand?.accent }}
       >
-        <header className="doc-top">
-          <div className="doc-topinner">
-            <button
-              type="button"
-              className="doc-iconbtn doc-navtoggle"
-              onClick={() => toggle('nav')}
-              aria-expanded={drawer === 'nav'}
-              aria-label={t('nav.pages')}
-            >
-              <span className="doc-burger" />
-            </button>
-
-            <button
-              type="button"
-              className="doc-iconbtn doc-panetoggle for-nav"
-              onClick={() => collapse('nav')}
-              aria-pressed={panes.nav}
-              aria-label={panes.nav ? t('nav.showPages') : t('nav.hidePages')}
-              title={panes.nav ? t('nav.showPages') : t('nav.hidePages')}
-            >
-              <PanelIcon side="left" />
-            </button>
-
-            <a className="doc-home" href={brand?.url || '/'}>
-              {brand?.logo ? (
-                <img className="doc-mark doc-mark-img" src={brand.logo} alt="" />
-              ) : (
-                <span className="doc-mark">{name.slice(0, 1).toUpperCase()}</span>
-              )}
-              <span className="doc-brand">{name}</span>
-            </a>
-
-            {sections.length > 0 && (
-              <nav className="doc-panels" aria-label={t('nav.panels')}>
-                {sections.map((section) => (
-                  <Link
-                    key={section.key}
-                    href={section.url}
-                    className={`doc-panel${section.current ? ' on' : ''}`}
-                    aria-current={section.current ? 'page' : undefined}
-                  >
-                    {section.label}
-                  </Link>
-                ))}
-              </nav>
-            )}
-
-            {page && (
-              <span className="doc-crumb">
-                {crumb ? `${crumb} · ` : ''}
-                <b>{page.title}</b>
-              </span>
-            )}
-
-            <div className="doc-tools">
-              <button type="button" className="doc-searchbtn" onClick={() => setFinding(true)}>
-                <SearchIcon />
-                <span>{t('search.button')}</span>
-                <kbd>⌘K</kbd>
+        {!embed && (
+          <header className="doc-top">
+            <div className="doc-topinner">
+              <button
+                type="button"
+                className="doc-iconbtn doc-navtoggle"
+                onClick={() => toggle('nav')}
+                aria-expanded={drawer === 'nav'}
+                aria-label={t('nav.pages')}
+              >
+                <span className="doc-burger" />
               </button>
 
-              {hasOutline && (
-                <>
-                  <button
-                    type="button"
-                    className="doc-iconbtn doc-panetoggle for-toc"
-                    onClick={() => collapse('toc')}
-                    aria-pressed={panes.toc}
-                    aria-label={panes.toc ? t('nav.showOutline') : t('nav.hideOutline')}
-                    title={panes.toc ? t('nav.showOutline') : t('nav.hideOutline')}
-                  >
-                    <PanelIcon side="right" />
-                  </button>
+              <button
+                type="button"
+                className="doc-iconbtn doc-panetoggle for-nav"
+                onClick={() => collapse('nav')}
+                aria-pressed={panes.nav}
+                aria-label={panes.nav ? t('nav.showPages') : t('nav.hidePages')}
+                title={panes.nav ? t('nav.showPages') : t('nav.hidePages')}
+              >
+                <PanelIcon side="left" />
+              </button>
 
+              <a className="doc-home" href={brand?.url || '/'}>
+                {brand?.logo ? (
+                  <img className="doc-mark doc-mark-img" src={brand.logo} alt="" />
+                ) : (
+                  <span className="doc-mark">{name.slice(0, 1).toUpperCase()}</span>
+                )}
+                <span className="doc-brand">{name}</span>
+              </a>
+
+              {sections.length > 0 && (
+                <nav className="doc-panels" aria-label={t('nav.panels')}>
+                  {sections.map((section) => (
+                    <Link
+                      key={section.key}
+                      href={section.url}
+                      className={`doc-panel${section.current ? ' on' : ''}`}
+                      aria-current={section.current ? 'page' : undefined}
+                    >
+                      {section.label}
+                    </Link>
+                  ))}
+                </nav>
+              )}
+
+              {page && (
+                <span className="doc-crumb">
+                  {crumb ? `${crumb} · ` : ''}
+                  <b>{page.title}</b>
+                </span>
+              )}
+
+              <div className="doc-tools">
+                <button type="button" className="doc-searchbtn" onClick={() => setFinding(true)}>
+                  <SearchIcon />
+                  <span>{t('search.button')}</span>
+                  <kbd>⌘K</kbd>
+                </button>
+
+                {hasOutline && (
+                  <>
+                    <button
+                      type="button"
+                      className="doc-iconbtn doc-panetoggle for-toc"
+                      onClick={() => collapse('toc')}
+                      aria-pressed={panes.toc}
+                      aria-label={panes.toc ? t('nav.showOutline') : t('nav.hideOutline')}
+                      title={panes.toc ? t('nav.showOutline') : t('nav.hideOutline')}
+                    >
+                      <PanelIcon side="right" />
+                    </button>
+
+                    <button
+                      type="button"
+                      className="doc-iconbtn doc-toctoggle"
+                      onClick={() => toggle('toc')}
+                      aria-expanded={drawer === 'toc'}
+                      aria-label={t('nav.outline')}
+                    >
+                      <OutlineIcon />
+                    </button>
+                  </>
+                )}
+                {page && (
                   <button
                     type="button"
-                    className="doc-iconbtn doc-toctoggle"
-                    onClick={() => toggle('toc')}
-                    aria-expanded={drawer === 'toc'}
-                    aria-label={t('nav.outline')}
+                    className="doc-iconbtn"
+                    onClick={() => window.print()}
+                    aria-label={t('page.print')}
+                    title={t('page.print')}
                   >
-                    <OutlineIcon />
+                    <PrintIcon />
                   </button>
-                </>
-              )}
-              {page && (
+                )}
                 <button
                   type="button"
                   className="doc-iconbtn"
-                  onClick={() => window.print()}
-                  aria-label={t('page.print')}
-                  title={t('page.print')}
+                  onClick={flip}
+                  aria-label={scheme === 'dark' ? t('scheme.toLight') : t('scheme.toDark')}
                 >
-                  <PrintIcon />
+                  {scheme === 'dark' ? <SunIcon /> : <MoonIcon />}
                 </button>
-              )}
-              <button
-                type="button"
-                className="doc-iconbtn"
-                onClick={flip}
-                aria-label={scheme === 'dark' ? t('scheme.toLight') : t('scheme.toDark')}
-              >
-                {scheme === 'dark' ? <SunIcon /> : <MoonIcon />}
-              </button>
+              </div>
             </div>
-          </div>
-        </header>
+          </header>
+        )}
 
         <div className="doc-body">
-          <DocNav
-            base={base}
-            groups={tree}
-            current={page?.slug ?? null}
-            openKeys={trail.map((group) => group.key)}
-            onNavigate={() => setDrawer(null)}
-          />
+          {!embed && (
+            <DocNav
+              base={base}
+              groups={tree}
+              current={page?.slug ?? null}
+              openKeys={trail.map((group) => group.key)}
+              onNavigate={() => setDrawer(null)}
+            />
+          )}
 
           <main className="doc-main">
             {page ? (
-              <div className={page.updated ? 'doc-page has-updated' : 'doc-page'} onClick={intercept}>
+              <div
+                className={page.updated ? 'doc-page has-updated' : 'doc-page'}
+                onClick={intercept}
+              >
                 <div className="doc-pagetools">
                   {page.updated && (
                     <time className="doc-updated" dateTime={page.updated}>
                       {t('page.updated', { date: formatUpdated(page.updated, locale) })}
                     </time>
                   )}
-                  <button
-                    type="button"
-                    className="doc-copypath"
-                    onClick={copyPath}
-                    title={page.path}
-                    aria-label={t('page.copyPath', { path: page.path })}
-                  >
-                    <CopyIcon />
-                  </button>
+                  {!embed && (
+                    <button
+                      type="button"
+                      className="doc-copypath"
+                      onClick={copyPath}
+                      title={page.path}
+                      aria-label={t('page.copyPath', { path: page.path })}
+                    >
+                      <CopyIcon />
+                    </button>
+                  )}
                 </div>
 
                 <DocProse html={page.html} innerRef={proseRef} />
@@ -442,12 +471,14 @@ export default function AiDocs({ base = '/docs', brand, groups, page = null, pan
             )}
           </main>
 
-          <DocToc
-            key={page?.slug ?? 'empty'}
-            toc={page?.toc}
-            slug={page?.slug}
-            onJump={() => setDrawer(null)}
-          />
+          {!embed && (
+            <DocToc
+              key={page?.slug ?? 'empty'}
+              toc={page?.toc}
+              slug={page?.slug}
+              onJump={() => setDrawer(null)}
+            />
+          )}
         </div>
 
         {finding && <DocSearch base={base} onClose={() => setFinding(false)} />}

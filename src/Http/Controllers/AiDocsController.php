@@ -43,6 +43,7 @@ final class AiDocsController
             'panels' => AiDocs::switcher(),
             'strings' => trans('ai-docs::ui'),
             'locale' => str_replace('_', '-', app()->getLocale()),
+            'embed' => request()->boolean('embed'),
         ]);
     }
 
