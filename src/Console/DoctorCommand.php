@@ -48,6 +48,12 @@ final class DoctorCommand extends Command
             ? null
             : 'Add a resolve.alias entry for @ai-docs — see the package README.');
 
+        if (is_link(base_path('vendor/phattarachai/laravel-ai-docs'))) {
+            $failures += $this->check('Vite dedupe (symlinked package)', fn (): ?string => $this->viteConfigContains('dedupe')
+                ? null
+                : 'The package is a symlink, so Vite resolves react and mermaid from outside node_modules. Add resolve.dedupe — see the package README.');
+        }
+
         $failures += $this->check('mermaid installed', fn (): ?string => $this->fileContains(base_path('package.json'), '"mermaid"')
             ? null
             : 'Run `npm install mermaid` — diagram fences fall back to plain text without it.');
@@ -156,8 +162,13 @@ final class DoctorCommand extends Command
      */
     private function viteConfigHasAlias(): bool
     {
+        return $this->viteConfigContains('@ai-docs');
+    }
+
+    private function viteConfigContains(string $needle): bool
+    {
         foreach (['js', 'ts', 'mjs', 'mts'] as $extension) {
-            if ($this->fileContains(base_path("vite.config.{$extension}"), '@ai-docs')) {
+            if ($this->fileContains(base_path("vite.config.{$extension}"), $needle)) {
                 return true;
             }
         }

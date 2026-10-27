@@ -157,7 +157,7 @@ final class Links
         }
 
         if (str_ends_with($relative, '.md')) {
-            return is_file($absolute) ? AiDocs::url(substr($relative, 0, -3)) : null;
+            return is_file($absolute) ? AiDocs::url(DocTree::slug($relative)) : null;
         }
 
         // A *link* to a screenshot, not an embed of it. Serving it through `_media` keeps

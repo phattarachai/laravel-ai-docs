@@ -57,6 +57,7 @@ import path from 'node:path'
 
 export default defineConfig({
     resolve: {
+        dedupe: ['react', 'react-dom', '@inertiajs/react', 'mermaid'],
         alias: {
             '@ai-docs': path.resolve(
                 __dirname,
@@ -66,6 +67,11 @@ export default defineConfig({
     },
 })
 ```
+
+`dedupe` matters when the package is a symlink, as with a composer `path` repository (`symlink: true`). Vite then
+resolves the module's own imports from its real folder, outside your `node_modules`, and the build fails with
+*failed to resolve import "mermaid"*. `dedupe` makes those four resolve from your project root. It changes nothing for
+an ordinary `vendor/` install, and `ai-docs:doctor` checks for it when the package is symlinked.
 
 Then register the gate, in `AppServiceProvider::boot()`:
 
@@ -463,6 +469,9 @@ shows no date.
 
 Within a group, pages sort by `order`, then `index.md` first, then nav label. The landing page is `index.md` at the
 root of the docs folder, or the first page of the first group if there is none.
+
+A folder's `index.md` is the folder's own page: `cart/index.md` is served at `/docs/cart`, and `/docs/cart/index`
+still works. A `cart.md` beside the folder keeps `/docs/cart`, and the index then stays at `/docs/cart/index`.
 
 Subfolders nest inside their parent group rather than listing beside it, so `cart/prices/` opens *inside* **Cart**
 and the breadcrumb reads `Cart · Prices`. There is no depth limit.

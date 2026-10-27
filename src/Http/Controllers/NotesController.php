@@ -8,6 +8,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Phattarachai\AiDocs\AiDocs;
 use Phattarachai\AiDocs\Http\Requests\PushNoteRequest;
+use Phattarachai\AiDocs\Support\Docs;
 use Phattarachai\AiDocs\Support\DocTree;
 use Phattarachai\AiDocs\Support\Meta;
 use Phattarachai\AiDocs\Support\NotePath;
@@ -30,8 +31,8 @@ final class NotesController
             'slug' => $doc['slug'],
             'title' => $doc['title'],
             'group' => $doc['group'],
-            'updated' => Meta::updated(AiDocs::root()."/{$doc['slug']}.md"),
-            'author' => Meta::author(AiDocs::root()."/{$doc['slug']}.md"),
+            'updated' => Meta::updated((string) Docs::file($doc['slug'])),
+            'author' => Meta::author((string) Docs::file($doc['slug'])),
             'url' => $this->url($panel, $doc['slug']),
         ], DocTree::flatten()));
 
@@ -41,7 +42,8 @@ final class NotesController
     public function store(PushNoteRequest $request): JsonResponse
     {
         $panel = $this->panel($request->validated('panel'));
-        $slugs = NoteStore::put($panel, $request->pushed(), $request->validated('author'), $request->prune());
+        $written = NoteStore::put($panel, $request->pushed(), $request->validated('author'), $request->prune());
+        $slugs = AiDocs::within($panel['key'], fn (): array => array_map(DocTree::slug(...), $written));
 
         return response()->json([
             'panel' => $panel['key'],

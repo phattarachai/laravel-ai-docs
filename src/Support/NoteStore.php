@@ -25,7 +25,7 @@ final class NoteStore
      *
      * @param  Panel  $panel
      * @param  array<string, string>  $files
-     * @return list<string> the slugs of the pages written
+     * @return list<string> the pages written, relative to the panel root
      */
     public static function put(array $panel, array $files, ?string $author, ?string $prune): array
     {
@@ -35,18 +35,18 @@ final class NoteStore
             File::deleteDirectory("{$root}/{$prune}");
         }
 
-        $slugs = [];
+        $pages = [];
 
         foreach ($files as $path => $contents) {
             File::ensureDirectoryExists(dirname("{$root}/{$path}"));
             File::put("{$root}/{$path}", str_ends_with($path, '.md') ? self::stamp($contents, $author) : $contents);
 
             if (str_ends_with($path, '.md')) {
-                $slugs[] = substr($path, 0, -3);
+                $pages[] = $path;
             }
         }
 
-        return $slugs;
+        return $pages;
     }
 
     /**

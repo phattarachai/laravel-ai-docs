@@ -130,6 +130,24 @@ it('adds to a pushed folder, and replaces it only with --prune', function (): vo
         ->and(File::exists($this->notesRoot().'/flows/order/refund.md'))->toBeTrue();
 });
 
+it('reports a pushed folder\'s index.md at the folder\'s path, unless a page beside the folder has it', function (): void {
+    $folder = $this->scratch().'/order';
+    writeLocal("{$folder}/index.md", "# Order flow\n");
+
+    artisan('ai-docs:push', ['source' => $folder, '--path' => 'flows/order'])
+        ->expectsOutputToContain('flows/order → http://localhost/docs/notes/flows/order')
+        ->assertSuccessful();
+
+    artisan('ai-docs:pull')->expectsOutputToContain('flows/order ')->doesntExpectOutputToContain('flows/order/index')->assertSuccessful();
+
+    actingAs(adUser())->get('/docs/notes/flows/order/index')->assertOk()->assertInertia(fn ($page) => $page->where('page.slug', 'flows/order'));
+
+    artisan('ai-docs:push', ['source' => writeLocal($this->scratch().'/order.md', "# Order\n"), '--path' => 'flows/order'])->assertSuccessful();
+    artisan('ai-docs:push', ['source' => $folder, '--path' => 'flows/order'])
+        ->expectsOutputToContain('flows/order/index → ')
+        ->assertSuccessful();
+});
+
 it('lists, deletes and dry-runs', function (): void {
     $source = writeLocal($this->scratch().'/order.md', "# Order flow\n");
 

@@ -28,7 +28,7 @@ final class Docs
         $panel = AiDocs::current();
 
         return [
-            'slug' => substr($relative, 0, -3),
+            'slug' => DocTree::slug($relative),
             'title' => DocTree::title($absolute, basename($relative)),
             'path' => ($panel['notes'] ? $panel['local'] : $panel['root']).'/'.$relative,
             'updated' => Meta::updated($absolute),
@@ -95,13 +95,28 @@ final class Docs
         return str_replace('\\', '/', (string) realpath(AiDocs::root().'/'.$path));
     }
 
+    /**
+     * The doc's absolute path, or null when the slug names none.
+     */
+    public static function file(string $slug): ?string
+    {
+        $relative = self::resolve(trim($slug, '/'));
+
+        return $relative === null ? null : AiDocs::root().'/'.$relative;
+    }
+
+    /**
+     * `cart` is `cart.md`, else the folder's `cart/index.md` — see {@see DocTree::slug()}.
+     */
     private static function resolve(string $slug): ?string
     {
         if ($slug === '' || preg_match('#^[\p{L}\p{N}/_.-]+$#u', $slug) !== 1) {
             return null;
         }
 
-        $relative = self::within(realpath(AiDocs::root().'/'.$slug.'.md'), realpath(AiDocs::root()));
+        $root = realpath(AiDocs::root());
+        $relative = self::within(realpath(AiDocs::root().'/'.$slug.'.md'), $root)
+            ?? self::within(realpath(AiDocs::root().'/'.$slug.'/index.md'), $root);
 
         return $relative === null || AiDocs::excluded($relative) ? null : $relative;
     }
