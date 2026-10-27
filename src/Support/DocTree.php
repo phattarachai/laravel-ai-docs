@@ -41,7 +41,7 @@ final class DocTree
             $meta = Meta::read($file->getPathname(), $file->getFilename());
 
             $pages[$directory][] = [
-                'slug' => substr($relative, 0, -3),
+                'slug' => self::slug($relative),
                 'title' => $meta['title'],
                 'nav' => $meta['nav'],
                 'navExplicit' => $meta['navExplicit'],
@@ -51,6 +51,20 @@ final class DocTree
         }
 
         return self::tree($pages);
+    }
+
+    /**
+     * The URL of a doc, relative to the panel: `cart/prices.md` is `cart/prices`, and a
+     * folder's `index.md` is the folder itself (`cart`) unless a `cart.md` beside the
+     * folder already claims that URL. The root `index.md` stays `index`.
+     */
+    public static function slug(string $relative): string
+    {
+        $folder = dirname($relative);
+
+        return basename($relative) === 'index.md' && $folder !== '.' && ! is_file(AiDocs::root()."/{$folder}.md")
+            ? $folder
+            : substr($relative, 0, -3);
     }
 
     /**
@@ -110,7 +124,7 @@ final class DocTree
                 continue;
             }
 
-            $items[] = [...Meta::read((string) $path, $file), 'slug' => substr($relative, 0, -3), 'file' => $file];
+            $items[] = [...Meta::read((string) $path, $file), 'slug' => self::slug($relative), 'file' => $file];
         }
 
         if ($items !== []) {

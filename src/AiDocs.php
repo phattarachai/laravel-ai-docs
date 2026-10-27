@@ -8,7 +8,7 @@ use Closure;
 use Illuminate\Http\Request;
 
 /**
- * @phpstan-type Panel array{key: string, path: string, root: string, label: string, exclude: list<string>}
+ * @phpstan-type Panel array{key: string, path: string, root: string, label: string, exclude: list<string>, notes: bool, local: string}
  *
  * @see README.md
  */
@@ -69,7 +69,29 @@ final class AiDocs
             $panels[(string) $key] = self::normalize((string) $key, (array) $definition);
         }
 
-        return $panels;
+        return self::excludeWorkingCopies($panels);
+    }
+
+    /**
+     * The panels Claude pushes notes to, keyed and in config order.
+     *
+     * @return array<string, Panel>
+     */
+    public static function notePanels(): array
+    {
+        return array_filter(self::panels(), fn (array $panel): bool => $panel['notes']);
+    }
+
+    /**
+     * A note panel by key, or the first one when the key is null.
+     *
+     * @return Panel|null
+     */
+    public static function notePanel(?string $key): ?array
+    {
+        $panels = self::notePanels();
+
+        return $key === null ? (reset($panels) ?: null) : ($panels[$key] ?? null);
     }
 
     public static function usePanel(?string $key): void
@@ -237,15 +259,43 @@ final class AiDocs
         $path = $definition['path'] ?? ($key === self::DEFAULT_PANEL ? config('ai-docs.path', 'docs') : $key);
         $exclude = $definition['exclude'] ?? config('ai-docs.exclude', []);
 
+        $notes = (bool) ($definition['notes'] ?? false);
+        $root = $definition['root'] ?? ($notes ? "storage/app/ai-docs/{$key}" : config('ai-docs.root', '.ai/documents'));
+
         return [
             'key' => $key,
             'path' => trim((string) $path, '/'),
-            'root' => trim((string) ($definition['root'] ?? config('ai-docs.root', '.ai/documents')), '/'),
+            'root' => trim((string) $root, '/'),
             'label' => (string) ($definition['label'] ?? ucfirst(str_replace(['-', '_'], ' ', $key))),
             'exclude' => array_values(array_map(
                 fn (mixed $prefix): string => trim((string) $prefix, '/'),
                 (array) $exclude,
             )),
+            'notes' => $notes,
+            'local' => trim((string) ($definition['local'] ?? ".ai/{$key}"), '/'),
         ];
+    }
+
+    /**
+     * A note panel's pulled working copy (`.ai/notes`) sits inside the repo, so a repo
+     * panel rooted above it (`.ai`) would list every pulled note a second time.
+     *
+     * @param  array<string, Panel>  $panels
+     * @return array<string, Panel>
+     */
+    private static function excludeWorkingCopies(array $panels): array
+    {
+        $locals = array_column(array_filter($panels, fn (array $panel): bool => $panel['notes']), 'local');
+
+        return array_map(fn (array $panel): array => [
+            ...$panel,
+            'exclude' => array_values(array_unique([
+                ...$panel['exclude'],
+                ...array_map(
+                    fn (string $local): string => substr($local, strlen($panel['root']) + 1),
+                    array_filter($locals, fn (string $local): bool => str_starts_with($local, $panel['root'].'/')),
+                ),
+            ])),
+        ], $panels);
     }
 }

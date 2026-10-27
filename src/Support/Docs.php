@@ -10,8 +10,10 @@ use Phattarachai\AiDocs\AiDocs;
 /** @see README.md */
 final class Docs
 {
+    public const array IMAGES = ['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp', 'avif'];
+
     /**
-     * @return array{slug: string, title: string, path: string, updated: string|null, html: string, toc: list<array{id: string, text: string, level: int}>}|null
+     * @return array{slug: string, title: string, path: string, updated: string|null, author: string|null, html: string, toc: list<array{id: string, text: string, level: int}>}|null
      */
     public static function page(string $slug): ?array
     {
@@ -23,12 +25,14 @@ final class Docs
 
         $rendered = self::rendered($relative);
         $absolute = AiDocs::root().'/'.$relative;
+        $panel = AiDocs::current();
 
         return [
-            'slug' => substr($relative, 0, -3),
+            'slug' => DocTree::slug($relative),
             'title' => DocTree::title($absolute, basename($relative)),
-            'path' => AiDocs::current()['root'].'/'.$relative,
+            'path' => ($panel['notes'] ? $panel['local'] : $panel['root']).'/'.$relative,
             'updated' => Meta::updated($absolute),
+            'author' => Meta::author($absolute),
             'html' => $rendered['html'],
             'toc' => $rendered['toc'],
         ];
@@ -45,7 +49,8 @@ final class Docs
     }
 
     /**
-     * The mtime of the page and of every SVG it inlines — what the search index keys on.
+     * The mtime and size of the page and of every SVG it inlines — what the search index
+     * keys on. Size too, because two pushes of a note can land within the same second.
      */
     public static function stamp(string $slug): string
     {
@@ -57,7 +62,7 @@ final class Docs
 
         $files = [AiDocs::root().'/'.$relative => 0, ...self::rendered($relative)['files']];
 
-        return implode(',', array_map(fn (string $file): int => (int) @filemtime($file), array_keys($files)));
+        return implode(',', array_map(fn (string $file): string => @filemtime($file).':'.@filesize($file), array_keys($files)));
     }
 
     public static function first(): ?string
@@ -71,14 +76,13 @@ final class Docs
 
     public static function media(string $path): ?string
     {
-        $extensions = ['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp', 'avif'];
         $path = trim($path, '/');
 
         if ($path === '' || preg_match('#^[\p{L}\p{N}/_.-]+$#u', $path) !== 1) {
             return null;
         }
 
-        if (! in_array(mb_strtolower(pathinfo($path, PATHINFO_EXTENSION)), $extensions, strict: true)) {
+        if (! in_array(mb_strtolower(pathinfo($path, PATHINFO_EXTENSION)), self::IMAGES, strict: true)) {
             return null;
         }
 
@@ -91,13 +95,28 @@ final class Docs
         return str_replace('\\', '/', (string) realpath(AiDocs::root().'/'.$path));
     }
 
+    /**
+     * The doc's absolute path, or null when the slug names none.
+     */
+    public static function file(string $slug): ?string
+    {
+        $relative = self::resolve(trim($slug, '/'));
+
+        return $relative === null ? null : AiDocs::root().'/'.$relative;
+    }
+
+    /**
+     * `cart` is `cart.md`, else the folder's `cart/index.md` — see {@see DocTree::slug()}.
+     */
     private static function resolve(string $slug): ?string
     {
         if ($slug === '' || preg_match('#^[\p{L}\p{N}/_.-]+$#u', $slug) !== 1) {
             return null;
         }
 
-        $relative = self::within(realpath(AiDocs::root().'/'.$slug.'.md'), realpath(AiDocs::root()));
+        $root = realpath(AiDocs::root());
+        $relative = self::within(realpath(AiDocs::root().'/'.$slug.'.md'), $root)
+            ?? self::within(realpath(AiDocs::root().'/'.$slug.'/index.md'), $root);
 
         return $relative === null || AiDocs::excluded($relative) ? null : $relative;
     }
@@ -144,7 +163,7 @@ final class Docs
             app()->getLocale(),
             AiDocs::panelKey(),
             sha1($relative),
-            (int) filemtime($absolute),
+            sha1($markdown),
         ]);
 
         $cached = Cache::get($key);

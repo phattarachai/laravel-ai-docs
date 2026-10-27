@@ -50,10 +50,21 @@ it('lands a folder link on the page the sidebar lists first under it', function 
 
     // `order: 1` on requirement.md, so it wins over todo.md.
     expect($html)->toContain('href="/tasks/cycle-1/42-thing/requirement"')
-        // index.md wins when nothing carries an explicit order.
-        ->toContain('href="/tasks/cycle-1/index"')
+        // index.md wins when nothing carries an explicit order, and is the folder's own URL.
+        ->toContain('href="/tasks/cycle-1"')
         // A folder with no page of its own hands off to the first one below it.
         ->toContain('href="/tasks/holder/child/note"');
+});
+
+it('serves a folder\'s index.md at the folder URL and still at /index', function (): void {
+    foreach (['cycle-1', 'cycle-1/index'] as $path) {
+        actingAs(adUser())
+            ->get(route('ai-docs.tasks.index', ['path' => $path]))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('page.slug', 'cycle-1')
+                ->where('page.path', '.ai/tasks/cycle-1/index.md'));
+    }
 });
 
 it('serves a linked screenshot through the panel rather than the code host', function (): void {

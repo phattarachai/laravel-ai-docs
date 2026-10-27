@@ -36,7 +36,7 @@ final class DoctorCommand extends Command
 
             $failures += $this->check($label, fn (): ?string => AiDocs::within(
                 $panel['key'],
-                fn (): ?string => $this->root(),
+                fn (): ?string => $panel['notes'] ? $this->noteRoot() : $this->root(),
             ));
         }
 
@@ -47,6 +47,12 @@ final class DoctorCommand extends Command
         $failures += $this->check('Vite alias @ai-docs', fn (): ?string => $this->viteConfigHasAlias()
             ? null
             : 'Add a resolve.alias entry for @ai-docs — see the package README.');
+
+        if (is_link(base_path('vendor/phattarachai/laravel-ai-docs'))) {
+            $failures += $this->check('Vite dedupe (symlinked package)', fn (): ?string => $this->viteConfigContains('dedupe')
+                ? null
+                : 'The package is a symlink, so Vite resolves react and mermaid from outside node_modules. Add resolve.dedupe — see the package README.');
+        }
 
         $failures += $this->check('mermaid installed', fn (): ?string => $this->fileContains(base_path('package.json'), '"mermaid"')
             ? null
@@ -128,13 +134,41 @@ final class DoctorCommand extends Command
     }
 
     /**
+     * A note panel starts empty and fills from pushes, so it only has to be writable.
+     */
+    private function noteRoot(): ?string
+    {
+        $root = AiDocs::root();
+
+        if (! is_dir($root) && ! @mkdir($root, recursive: true)) {
+            return "{$root} cannot be created — pushed notes are written there.";
+        }
+
+        if (! is_writable($root)) {
+            return "{$root} is not writable — pushed notes are written there.";
+        }
+
+        $tokens = count((array) config('ai-docs.api.tokens', []));
+        $pages = count(DocTree::flatten());
+
+        $this->line('  <fg=gray>'.AiDocs::url()." · {$root} · {$pages} notes · {$tokens} API token(s)</>");
+
+        return null;
+    }
+
+    /**
      * The React starter kit ships `vite.config.ts`, so every extension Vite
      * itself loads counts.
      */
     private function viteConfigHasAlias(): bool
     {
+        return $this->viteConfigContains('@ai-docs');
+    }
+
+    private function viteConfigContains(string $needle): bool
+    {
         foreach (['js', 'ts', 'mjs', 'mts'] as $extension) {
-            if ($this->fileContains(base_path("vite.config.{$extension}"), '@ai-docs')) {
+            if ($this->fileContains(base_path("vite.config.{$extension}"), $needle)) {
                 return true;
             }
         }

@@ -36,6 +36,7 @@ return [
     'page.linkCopied' => 'Link copied',
     'page.print' => 'Print / Save as PDF',
     'page.updated' => 'Updated :date',
+    'page.updatedBy' => 'Updated :date by :author',
 
     'zoom.open' => 'Full screen',
     'zoom.close' => 'Esc',
