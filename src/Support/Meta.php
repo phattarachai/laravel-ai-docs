@@ -6,8 +6,6 @@ namespace Phattarachai\AiDocs\Support;
 
 use Carbon\Exceptions\InvalidFormatException;
 use Illuminate\Support\Carbon;
-use Symfony\Component\Yaml\Exception\ParseException;
-use Symfony\Component\Yaml\Yaml;
 
 /** @see README.md */
 final class Meta
@@ -23,7 +21,7 @@ final class Meta
     {
         $head = (string) @file_get_contents($absolute, length: self::HEAD_BYTES);
 
-        [$data, $body] = self::split($head);
+        [$data, $body] = FrontMatter::split($head);
 
         $title = self::string($data, 'title') ?: (self::h1($body) ?: $fallback);
         $nav = self::string($data, 'nav');
@@ -42,7 +40,7 @@ final class Meta
      */
     public static function group(string $absolute): string
     {
-        [$data] = self::split((string) @file_get_contents($absolute, length: self::HEAD_BYTES));
+        [$data] = FrontMatter::split((string) @file_get_contents($absolute, length: self::HEAD_BYTES));
 
         return self::string($data, 'group');
     }
@@ -52,7 +50,7 @@ final class Meta
      */
     public static function updated(string $absolute): ?string
     {
-        [$data] = self::split((string) @file_get_contents($absolute, length: self::HEAD_BYTES));
+        [$data] = FrontMatter::split((string) @file_get_contents($absolute, length: self::HEAD_BYTES));
         $value = $data['updated'] ?? null;
 
         return match (true) {
@@ -61,6 +59,16 @@ final class Meta
             is_string($value) && trim($value) !== '' => self::fromString(trim($value)),
             default => null,
         };
+    }
+
+    /**
+     * see README.md — "Writing docs"
+     */
+    public static function author(string $absolute): ?string
+    {
+        [$data] = FrontMatter::split((string) @file_get_contents($absolute, length: self::HEAD_BYTES));
+
+        return self::string($data, 'author') ?: null;
     }
 
     public static function shorten(string $title): string
@@ -104,44 +112,6 @@ final class Meta
         }
 
         return $tail;
-    }
-
-    /**
-     * @return array{array<string, mixed>, string}
-     */
-    private static function split(string $head): array
-    {
-        $lines = preg_split('/\r\n|\r|\n/', $head) ?: [];
-
-        if (($lines[0] ?? '') !== '---') {
-            return [[], $head];
-        }
-
-        $yaml = [];
-
-        foreach (array_slice($lines, 1, preserve_keys: false) as $index => $line) {
-            if ($line === '---') {
-                return [self::yaml(implode("\n", $yaml)), implode("\n", array_slice($lines, $index + 2))];
-            }
-
-            $yaml[] = $line;
-        }
-
-        return [[], $head];
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private static function yaml(string $source): array
-    {
-        try {
-            $parsed = Yaml::parse($source);
-        } catch (ParseException) {
-            return [];
-        }
-
-        return is_array($parsed) ? $parsed : [];
     }
 
     private static function fromTimestamp(int $timestamp): string

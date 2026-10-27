@@ -298,7 +298,7 @@ and follows the scheme.
 light/dark toggle remembered in `localStorage`. The scheme lives on `.doc-root`, never on `<html>`, so the panel never
 fights the host app's own theme state.
 
-**Render cache** — keyed on the file's mtime, the render pipeline's version and the current locale, so it is
+**Render cache** — keyed on the file's content, the render pipeline's version and the current locale, so it is
 self-invalidating. Edit a file and reload; there is nothing to warm at deploy and nothing to clear. Set
 `AI_DOCS_CACHE=false` while writing if you prefer.
 
@@ -317,6 +317,107 @@ with a link out to the full page.
 - A heading reached by `#anchor` flashes briefly, in the full panel too, so a reader landing mid-page can find it.
 
 Access is the same gate as the panel; the iframe needs a same-origin page, which a default Laravel app allows.
+
+## Notes — pages Claude pushes without a commit
+
+The panels above show what was committed and deployed. A **note panel** shows pages pushed straight to the running app
+instead: an explanation of how a flow works, written for the people who use the system, published to staging in one
+command and replaced the next time it changes. Nothing is committed and nothing is deployed.
+
+A note is an ordinary page. It is markdown on disk, so the sidebar, search, mermaid, images, inline SVG, links and the
+access gate all work as they do for repo docs. It shows "Updated" with the push time and who pushed it.
+
+### Set up
+
+Mark a panel as a note panel:
+
+```php
+'panels' => [
+    'docs'  => ['root' => '.ai/documents', 'label' => 'Docs'],
+    'notes' => ['path' => 'docs/notes', 'label' => 'How it works', 'notes' => true],
+],
+```
+
+| Key     | Default                      | What it is                                                       |
+|---------|------------------------------|------------------------------------------------------------------|
+| `notes` | `false`                      | Claude pushes to this panel                                      |
+| `root`  | `storage/app/ai-docs/<key>`  | where pushed pages live on the server; created on the first push |
+| `local` | `.ai/<key>`                  | the working copy `ai-docs:pull` writes in a checkout             |
+
+In the checkout Claude works in, issue a token:
+
+```bash
+php artisan ai-docs:token --write
+```
+
+`--write` saves the plaintext as `AI_DOCS_REMOTE_TOKEN` in the local `.env` and prints only its sha256. Put the hash in
+the server's `.env` as `AI_DOCS_TOKEN_HASHES` (a comma list, so a token can be rotated: append the new hash, switch the
+client, drop the old one). Set `AI_DOCS_REMOTE_URL` locally to the app's URL.
+
+The root is under `storage/`, so it has to survive a deploy the way uploads do: the usual shared `storage` symlink
+does that. With several web servers, it has to be shared storage.
+
+### Push
+
+```bash
+php artisan ai-docs:push price-recalc.md --path=flows/cart/price-recalc
+php artisan ai-docs:push ./order-flow --path=flows/order        # a folder: every .md and image in it
+php artisan ai-docs:push .ai/notes/flows/order.md               # from the working copy: path and panel inferred
+php artisan ai-docs:push flows/order --delete
+```
+
+- **The path is the category.** `flows/cart/price-recalc` is the page `price-recalc` inside **Flows › Cart**. Folders
+  are labelled like repo folders, so an `index.md` with `group:` front matter names one.
+- **Images travel with the page.** Every relative image a page shows is sent and lands beside it. A missing image, or
+  one whose path would climb out of the panel, stops the push before anything is sent.
+- A folder push adds and overwrites. `--prune` also removes what the folder no longer has on the server.
+- `--title=` sets the page title, `--author=` the name shown (default `AI_DOCS_AUTHOR`, then `Claude`),
+  `--panel=` another note panel, and `--dry-run` lists what would be sent.
+- The last push wins. Two people pushing the same path overwrite each other; there is no conflict check.
+- `--delete` removes the page and a folder at that path. Images it showed are left on the server.
+
+### Pull
+
+```bash
+php artisan ai-docs:pull                                        # list the notes
+php artisan ai-docs:pull flows/cart/price-recalc                # one page and its images
+php artisan ai-docs:pull flows                                  # a whole category
+php artisan ai-docs:pull https://staging.example.com/docs/notes/flows/order
+```
+
+Pull writes into the working copy (`.ai/notes/…`), mirroring the path, so pull → edit → push needs no flags. The
+first pull adds `/.ai/notes/` to `.gitignore`: the working copy is a scratch pad. A note worth keeping for good moves
+into the docs tree and gets committed. A repo panel whose root holds the working copy (one rooted at `.ai`, say)
+skips it, so pulled notes are not listed twice. `--to=` writes somewhere else.
+
+The copy-path button on a note copies its working-copy path, `.ai/notes/flows/order.md`, so an agent reading it knows
+to pull before editing.
+
+### Note or doc?
+
+The package ships a [Laravel Boost](https://github.com/laravel/boost) skill, `ai-docs-notes`, that tells an agent the
+rule below and the commands above; `php artisan boost:install` picks it up.
+
+| Push a note when…                                               | Commit a doc when…                                   |
+|-----------------------------------------------------------------|------------------------------------------------------|
+| it explains the system to the people who use it                 | it is for the people who change the code             |
+| it should be readable now, on staging, before any deploy        | it should change with the code, in the same review   |
+| it is likely to be rewritten from the next round of feedback    | it describes a decision or a contract that holds     |
+
+### The API
+
+`ai-docs:push` and `ai-docs:pull` call a JSON API at `<path>/_api/v1`, with the token as a bearer token. It is
+throttled (`api.throttle`), carries no session, and 404s with the rest of the package when `AI_DOCS_ENABLED=false`.
+
+| Route                        | Does                                                                          |
+|------------------------------|-------------------------------------------------------------------------------|
+| `GET notes`                  | every note in a panel: slug, title, group, updated, author, url               |
+| `POST notes`                 | write `files: [{path, content}]` (base64, paths relative to the panel root)   |
+| `GET notes/{path}`           | the page at `{path}.md` with its images, plus everything under `{path}/`      |
+| `DELETE notes/{path}`        | remove `{path}.md` and `{path}/`                                              |
+
+Each takes an optional `panel`; without one it uses the first note panel. A path is letters, digits, `_`, `.` and `-`
+in `/`-separated segments, and only markdown and images are accepted.
 
 ## Writing docs
 
@@ -352,6 +453,7 @@ flowchart LR
 | `nav`     | Sidebar label. Defaults to the shortened `title`                                 |
 | `order`   | Sort position within its group. Unset sorts as `500`                             |
 | `updated` | Shown beside the page title as "Updated …", formatted for the app locale         |
+| `author`  | Shown after the date: "Updated … by …". A pushed note gets it from the push      |
 | `group`   | On a folder's `index.md` only: the folder's sidebar label, in place of the folder name |
 
 `updated` is when the page's content last changed, written by its author: `2026-10-19 16:30` (read in
@@ -397,6 +499,12 @@ See [`config/ai-docs.php`](config/ai-docs.php).
 | `tables`              | `scroll`         | `AI_DOCS_TABLES`       | `scroll` or `wrap`; styling only            |
 | `source_link_base`    | `null`           | `AI_DOCS_SOURCE_BASE`  | code-host base URL for out-of-tree links    |
 | `cache`               | `true`           | `AI_DOCS_CACHE`        | render + search cache                       |
+| `api.tokens`          | `[]`             | `AI_DOCS_TOKEN_HASHES` | sha256 hashes, comma list; empty refuses    |
+| `api.throttle`        | `60,1`           | `AI_DOCS_THROTTLE`     | requests, minutes                           |
+| `api.max_kb`          | `20480`          | `AI_DOCS_MAX_PUSH_KB`  | the largest push                            |
+| `remote.url`          | `null`           | `AI_DOCS_REMOTE_URL`   | the app `ai-docs:push` / `pull` talk to     |
+| `remote.token`        | `null`           | `AI_DOCS_REMOTE_TOKEN` | plaintext, local `.env` only                |
+| `remote.author`       | `Claude`         | `AI_DOCS_AUTHOR`       | shown beside a pushed page's date           |
 | `brand.name`          | `APP_NAME`       | `AI_DOCS_BRAND`        | shown in the header                         |
 | `brand.accent`        | `#3b82f6`        | `AI_DOCS_ACCENT`       | injected as `--doc-accent`, no rebuild      |
 | `brand.url`           | `/`              | `AI_DOCS_BRAND_URL`    | where the header logo links back to         |
@@ -405,7 +513,8 @@ See [`config/ai-docs.php`](config/ai-docs.php).
 `exclude` matches whole segments relative to `root`, so `'handbook'` drops the `handbook/` directory while leaving
 `handbook.md` servable. Excluded paths are dropped from the tree, the search index, direct URLs and `_media` alike.
 
-A `panels` entry may set `path` (defaults to the key), `root`, `label` and `exclude`; whatever it omits falls back to
+A `panels` entry may set `path` (defaults to the key), `root`, `label`, `exclude`, and `notes` and `local` for a
+[note panel](#notes--pages-claude-pushes-without-a-commit); whatever it omits falls back to
 the top-level key of the same name. Route names gain the panel key — `route('ai-docs.tasks.index')` — while a single
 unnamed panel keeps `route('ai-docs.index')`. Panels are registered longest-path first, so one nested inside another's
 prefix (`docs` and `docs/tasks`) still resolves.

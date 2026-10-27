@@ -32,6 +32,7 @@ return [
     'page.linkCopied' => 'คัดลอกลิงก์แล้ว',
     'page.print' => 'พิมพ์ / บันทึกเป็น PDF',
     'page.updated' => 'แก้ไขล่าสุด :date',
+    'page.updatedBy' => 'แก้ไขล่าสุด :date · :author',
 
     'zoom.open' => 'เต็มจอ',
     'zoom.close' => 'Esc',

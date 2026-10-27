@@ -164,7 +164,7 @@ function zoomable(element) {
  * @param {Array<{key: string, label: string, items: Array<{slug: string, title: string, nav: string}>, groups: Array<object>}>} groups nested; `groups` recurses
  * @param {Array<{key: string, label: string, url: string, current: boolean}>} panels sibling trees; empty when there is only one
  * @param {Record<string, string>|undefined} strings copy overrides, from `trans('ai-docs::ui')`
- * @param {{slug: string, title: string, path: string, updated: string|null, html: string, toc: Array<{id: string, text: string, level: number}>}|null} page
+ * @param {{slug: string, title: string, path: string, updated: string|null, author: string|null, html: string, toc: Array<{id: string, text: string, level: number}>}|null} page
  * @param {string|undefined} locale BCP 47 tag for dates, from `app()->getLocale()`
  * @param {boolean|undefined} embed `?embed=1`: the page alone, for an iframe in the host app. see README.md — "Embed"
  */
@@ -448,7 +448,12 @@ export default function AiDocs({
                 <div className="doc-pagetools">
                   {page.updated && (
                     <time className="doc-updated" dateTime={page.updated}>
-                      {t('page.updated', { date: formatUpdated(page.updated, locale) })}
+                      {page.author
+                        ? t('page.updatedBy', {
+                            date: formatUpdated(page.updated, locale),
+                            author: page.author,
+                          })
+                        : t('page.updated', { date: formatUpdated(page.updated, locale) })}
                     </time>
                   )}
                   {!embed && (

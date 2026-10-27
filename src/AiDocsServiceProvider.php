@@ -8,6 +8,10 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Override;
 use Phattarachai\AiDocs\Console\DoctorCommand;
+use Phattarachai\AiDocs\Console\PullCommand;
+use Phattarachai\AiDocs\Console\PushCommand;
+use Phattarachai\AiDocs\Console\TokenCommand;
+use Phattarachai\AiDocs\Http\Middleware\AuthenticateToken;
 use Phattarachai\AiDocs\Http\Middleware\Authorize;
 use Phattarachai\AiDocs\Http\Middleware\SetPanel;
 
@@ -29,13 +33,28 @@ final class AiDocsServiceProvider extends ServiceProvider
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'ai-docs');
 
         if ((bool) config('ai-docs.enabled', default: true)) {
+            $this->registerApiRoutes();
             $this->registerRoutes();
         }
 
         if ($this->app->runningInConsole()) {
             $this->registerPublishing();
-            $this->commands([DoctorCommand::class]);
+            $this->commands([DoctorCommand::class, TokenCommand::class, PushCommand::class, PullCommand::class]);
         }
+    }
+
+    /**
+     * Registered before the panels, whose catch-all would otherwise swallow `_api/…`.
+     * No session or gate: the bearer token is the credential.
+     */
+    private function registerApiRoutes(): void
+    {
+        Route::group([
+            'domain' => config('ai-docs.domain'),
+            'prefix' => trim((string) config('ai-docs.path', 'docs'), '/').'/_api/v1',
+            'middleware' => ['throttle:'.config('ai-docs.api.throttle', '60,1'), AuthenticateToken::class],
+            'as' => 'ai-docs.api.',
+        ], fn () => $this->loadRoutesFrom(__DIR__.'/../routes/api.php'));
     }
 
     /**

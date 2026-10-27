@@ -178,3 +178,17 @@ The cache key names the `.md` file, but an inlined SVG is a second input that is
 page has been parsed. Each cache entry therefore stores `files: [path => mtime]`, and `Docs::rendered()`
 re-renders when any of them has changed. The search index signature goes through `Docs::stamp()` for
 the same reason. Without this, editing only the drawing never reaches the page.
+
+## Notes are files, and that shapes three things
+
+A pushed note is a markdown file under the note panel's root in `storage/`, so everything that reads a
+panel reads notes with no second code path. Three things follow:
+
+- The token API is registered **before** the panels. A panel's catch-all `{path?}` matches `_api/v1/…`
+  too, and Laravel resolves in registration order.
+- The render cache keys on the page's **content**, not its mtime. Two pushes inside one second leave the
+  mtime unchanged, and the second page would have rendered as the first. The search index keys on mtime
+  plus size for the same reason, since hashing every file on each `⌘K` costs more.
+- `AiDocs::panels()` adds a note panel's working copy (`local`) to the `exclude` of any repo panel whose
+  root contains it. Without that, a panel rooted at `.ai` lists every pulled note twice on a dev machine.
+

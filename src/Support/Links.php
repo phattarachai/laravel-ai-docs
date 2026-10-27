@@ -10,7 +10,11 @@ use League\CommonMark\Node\Inline\Text;
 use League\CommonMark\Node\Node;
 use Phattarachai\AiDocs\AiDocs;
 
-/** @see README.md */
+/**
+ * @phpstan-import-type Panel from AiDocs
+ *
+ * @see README.md
+ */
 final class Links
 {
     private const array MEDIA = ['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp', 'avif'];
@@ -171,7 +175,7 @@ final class Links
      * The panel being read first, then the deepest roots — so a panel rooted at
      * `.ai/tasks` claims the link before one rooted at `.ai`.
      *
-     * @return list<array{key: string, path: string, root: string, label: string, exclude: list<string>}>
+     * @return list<Panel>
      */
     private static function candidates(): array
     {

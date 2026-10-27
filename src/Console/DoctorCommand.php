@@ -36,7 +36,7 @@ final class DoctorCommand extends Command
 
             $failures += $this->check($label, fn (): ?string => AiDocs::within(
                 $panel['key'],
-                fn (): ?string => $this->root(),
+                fn (): ?string => $panel['notes'] ? $this->noteRoot() : $this->root(),
             ));
         }
 
@@ -123,6 +123,29 @@ final class DoctorCommand extends Command
         }
 
         $this->line('  <fg=gray>'.AiDocs::url()." · {$root} · {$pages} pages</>");
+
+        return null;
+    }
+
+    /**
+     * A note panel starts empty and fills from pushes, so it only has to be writable.
+     */
+    private function noteRoot(): ?string
+    {
+        $root = AiDocs::root();
+
+        if (! is_dir($root) && ! @mkdir($root, recursive: true)) {
+            return "{$root} cannot be created — pushed notes are written there.";
+        }
+
+        if (! is_writable($root)) {
+            return "{$root} is not writable — pushed notes are written there.";
+        }
+
+        $tokens = count((array) config('ai-docs.api.tokens', []));
+        $pages = count(DocTree::flatten());
+
+        $this->line('  <fg=gray>'.AiDocs::url()." · {$root} · {$pages} notes · {$tokens} API token(s)</>");
 
         return null;
     }
