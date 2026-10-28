@@ -1171,9 +1171,23 @@
   --glyph: '✦';
 }
 
+/* A ringed `!`, not ❕: that one is a colour emoji, drawn pale grey whatever the tone. */
 .doc-callout.tone-important {
   --tone: #7c3aed;
-  --glyph: '❕';
+  --glyph: '!';
+}
+
+.doc-callout.tone-important .doc-callout-hd::before {
+  display: inline-grid;
+  place-items: center;
+  box-sizing: border-box;
+  width: calc(15px * var(--doc-scale));
+  height: calc(15px * var(--doc-scale));
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+  font-size: calc(10.5px * var(--doc-scale));
+  font-weight: 800;
+  line-height: 1;
 }
 
 .doc-callout.tone-warning {
