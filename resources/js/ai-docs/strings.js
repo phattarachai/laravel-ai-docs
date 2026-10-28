@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext } from 'react'
 
 /**
  * Every user-visible string in the docs panel, keyed by a flat dotted key grouped
- * by area (`nav.*`, `scheme.*`, `search.*`, `page.*`, `zoom.*`).
+ * by area (`nav.*`, `theme.*`, `search.*`, `page.*`, `zoom.*`).
  *
  * The defaults are English so the module renders standalone with zero props. A
  * host overrides any subset by passing `strings` to `<AiDocs>`; the Laravel side
@@ -22,8 +22,12 @@ export const DEFAULT_STRINGS = {
   'nav.hideOutline': 'Hide outline',
   'nav.showOutline': 'Show outline',
 
-  'scheme.toLight': 'Switch to light',
-  'scheme.toDark': 'Switch to dark',
+  'theme.label': 'Theme',
+  'theme.current': 'Theme: :name',
+  'theme.light': 'Light',
+  'theme.soft': 'Soft',
+  'theme.nord': 'Nord',
+  'theme.dark': 'Dark',
 
   'search.button': 'Search docs…',
   'search.label': 'Search docs',

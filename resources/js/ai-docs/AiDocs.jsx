@@ -1,9 +1,10 @@
 import { memo, useCallback, useEffect, useRef, useState } from 'react'
-import { Link, router } from '@inertiajs/react'
+import { router } from '@inertiajs/react'
 
 import './ai-docs.css'
 import './highlight.css'
 import { copyText } from './copy'
+import { DocMenu } from './DocMenu'
 import { DocNav, locate } from './DocNav'
 import { DocSearch } from './DocSearch'
 import { DocToc } from './DocToc'
@@ -11,7 +12,7 @@ import { DocZoom } from './DocZoom'
 import { useMermaid } from './Mermaid'
 import { readPanes, writePanes } from './panes'
 import { embedScheme, followHash, useEmbedReport } from './embed'
-import { readScheme, writeScheme } from './scheme'
+import { SCHEMES, readScheme, writeScheme } from './scheme'
 import { formatUpdated } from './dates'
 import { DEFAULT_STRINGS, StringsContext, translate } from './strings'
 
@@ -19,33 +20,6 @@ followHash()
 
 const NO_GROUPS = []
 const NO_PANELS = []
-
-function SunIcon() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-      <circle cx="8" cy="8" r="3.1" stroke="currentColor" strokeWidth="1.3" />
-      <path
-        d="M8 1v1.6M8 13.4V15M1 8h1.6M13.4 8H15M3.1 3.1l1.1 1.1M11.8 11.8l1.1 1.1M12.9 3.1l-1.1 1.1M4.2 11.8l-1.1 1.1"
-        stroke="currentColor"
-        strokeWidth="1.3"
-        strokeLinecap="round"
-      />
-    </svg>
-  )
-}
-
-function MoonIcon() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-      <path
-        d="M13.4 9.8A5.8 5.8 0 0 1 6.2 2.6a5.8 5.8 0 1 0 7.2 7.2Z"
-        stroke="currentColor"
-        strokeWidth="1.3"
-        strokeLinejoin="round"
-      />
-    </svg>
-  )
-}
 
 function OutlineIcon() {
   return (
@@ -127,6 +101,11 @@ function PrintIcon() {
   )
 }
 
+/** @param {{scheme: string}} props which theme's colours to show */
+function Swatch({ scheme }) {
+  return <span className={`doc-swatch is-${scheme}`} aria-hidden="true" />
+}
+
 /**
  * see docs/internals.md — "DocProse is memoized"
  *
@@ -160,7 +139,7 @@ function zoomable(element) {
  * see README.md
  *
  * @param {string} base panel root URL
- * @param {{name: string, accent: string, url: string, logo: string|null, tables: 'wrap'|'scroll'}} brand
+ * @param {{name: string, accent: string, url: string, logo: string|null, tables: 'wrap'|'scroll', theme: string|null}} brand
  * @param {Array<{key: string, label: string, items: Array<{slug: string, title: string, nav: string}>, groups: Array<object>}>} groups nested; `groups` recurses
  * @param {Array<{key: string, label: string, url: string, current: boolean}>} panels sibling trees; empty when there is only one
  * @param {Record<string, string>|undefined} strings copy overrides, from `trans('ai-docs::ui')`
@@ -186,7 +165,7 @@ export default function AiDocs({
   const [drawer, setDrawer] = useState(null)
   // Independent of `drawer`: this is the wide-screen column, not the phone overlay.
   const [panes, setPanes] = useState(readPanes)
-  const [scheme, setScheme] = useState(() => (embed ? embedScheme() : readScheme()))
+  const [scheme, setScheme] = useState(() => (embed ? embedScheme() : readScheme(brand?.theme)))
   const [finding, setFinding] = useState(false)
   const [zoom, setZoom] = useState(null)
   const [toast, setToast] = useState(null)
@@ -232,9 +211,7 @@ export default function AiDocs({
     return () => window.removeEventListener('keydown', keys)
   }, [embed])
 
-  const flip = () => {
-    const next = scheme === 'dark' ? 'light' : 'dark'
-
+  const pick = (next) => {
     setScheme(next)
     writeScheme(next)
   }
@@ -352,18 +329,21 @@ export default function AiDocs({
               </a>
 
               {sections.length > 0 && (
-                <nav className="doc-panels" aria-label={t('nav.panels')}>
-                  {sections.map((section) => (
-                    <Link
-                      key={section.key}
-                      href={section.url}
-                      className={`doc-panel${section.current ? ' on' : ''}`}
-                      aria-current={section.current ? 'page' : undefined}
-                    >
-                      {section.label}
-                    </Link>
-                  ))}
-                </nav>
+                <DocMenu
+                  className="doc-panels"
+                  label={t('nav.panels')}
+                  trigger={
+                    <span className="doc-menu-label">
+                      {(sections.find((section) => section.current) ?? sections[0]).label}
+                    </span>
+                  }
+                  items={sections.map((section) => ({
+                    key: section.key,
+                    label: section.label,
+                    current: section.current,
+                    href: section.url,
+                  }))}
+                />
               )}
 
               {page && (
@@ -415,14 +395,19 @@ export default function AiDocs({
                     <PrintIcon />
                   </button>
                 )}
-                <button
-                  type="button"
-                  className="doc-iconbtn"
-                  onClick={flip}
-                  aria-label={scheme === 'dark' ? t('scheme.toLight') : t('scheme.toDark')}
-                >
-                  {scheme === 'dark' ? <SunIcon /> : <MoonIcon />}
-                </button>
+                <DocMenu
+                  className="doc-themes"
+                  label={t('theme.label')}
+                  title={t('theme.current', { name: t(`theme.${scheme}`) })}
+                  trigger={<Swatch scheme={scheme} />}
+                  items={SCHEMES.map((each) => ({
+                    key: each,
+                    label: t(`theme.${each}`),
+                    current: each === scheme,
+                    icon: <Swatch scheme={each} />,
+                  }))}
+                  onSelect={pick}
+                />
               </div>
             </div>
           </header>

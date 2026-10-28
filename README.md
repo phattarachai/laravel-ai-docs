@@ -137,7 +137,7 @@ top. There is no sidebar config file to keep in sync — add a file, it appears.
 
 **Panels** — one install can serve several trees. Docs you maintain and task folders you throw away have different
 half-lives, and merging them into one root buries the first under the second. Give each its own panel and you get its
-own URL, sidebar and search index, plus a switcher in the header:
+own URL, sidebar and search index, plus a dropdown in the header that names the current panel and lists the others:
 
 ```php
 'panels' => [
@@ -147,7 +147,7 @@ own URL, sidebar and search index, plus a switcher in the header:
 ```
 
 Links resolve across panels, so a task can link to a doc and back. Leave `panels` empty for the single tree built from
-`path` / `root` / `exclude`.
+`path` / `root` / `exclude`; with one panel there is no dropdown.
 
 **Collapsing a column** — the header carries a toggle for each side column: the page tree on the left, the outline on
 the right. Collapse either to give a wide table or diagram the whole width; the choice is remembered per browser. The
@@ -158,11 +158,11 @@ Every heading is its own hit, scored across title, heading and body text, with t
 snippet. Arrows move, Enter jumps straight to the anchor.
 
 **Syntax highlighting is server-side**, via `tempest/highlight` with its CSS theme: the HTML carries `.hl-*` classes,
-the colours are CSS custom properties per scheme, and no highlighting JavaScript reaches the browser. It lands in the
+the colours are CSS custom properties per theme, and no highlighting JavaScript reaches the browser. It lands in the
 render cache with the rest of the page.
 
 **Mermaid diagrams** — a ```` ```mermaid ```` fence becomes a diagram, with `mermaid` lazy-imported on the first page
-that has one. Both schemes are themed to match the panel, and a small semantic palette is available to opt into with
+that has one. Every theme has its own diagram palette, and a small semantic palette is available to opt into with
 `class Node decision` or `Node:::decision` — `decision`, `ok`, `bad`, `actor`.
 Diagrams lay out with dagre on either major; mermaid 12's ELK default is not used.
 A fence mermaid cannot draw shows its source instead, with the reason in the browser console.
@@ -185,8 +185,8 @@ permalink; clicking it copies the absolute URL rather than navigating.
 diagram never fits a documentation column.
 
 **Print / Save as PDF** — a toolbar button prints the current page through the browser, so any reader can save a PDF
-with no server-side dependency. A `@media print` sheet drops the top bar, both rails and every control, forces the dark
-scheme back to ink-on-paper, and keeps code blocks, tables and diagrams from splitting across a page — and because the
+with no server-side dependency. A `@media print` sheet drops the top bar, both rails and every control, forces every
+theme back to ink-on-paper at 100% type, and keeps code blocks, tables and diagrams from splitting across a page — and because the
 whole document already lives in the DOM, the export is the entire page, mermaid diagrams and all, not just the viewport.
 
 A tall image or diagram is scaled down to fit one page. When one lands awkwardly — stranded under a heading with a page
@@ -237,7 +237,7 @@ The drawing is written into the page instead of being loaded through `<img>`, wh
 
 - It **uses the panel's font**. Leave `font-family` off your `<text>` and Thai labels match the prose around them. An
   `<img>` SVG can't load web fonts.
-- It **can follow the light/dark toggle** through the panel's CSS custom properties, if you draw with them (below).
+- It **can follow the theme picker** through the panel's CSS custom properties, if you draw with them (below).
 - **Links work.** `<a href="billing.md#flow">` around a card is resolved like a markdown link, across panels too, and
   opens that doc in place. An `<a href="#heading">` jumps to a heading on the same page.
 - It **gets the same zoom button and `print-NN` sizing** as a mermaid diagram. `wide` and `print-NN` combine with
@@ -258,8 +258,9 @@ and `#arrow` selector follows it. The same drawing can therefore appear twice on
 re-namespaces again. The fixed `width`/`height` is dropped and the `viewBox` kept, so the drawing scales with the
 column. The `<style>` block is scoped to the drawing's own root, so `.card { … }` can't restyle the page around it.
 
-**Theme hooks.** These properties are set on the panel in both schemes. Write them with a fallback, so the file still
-renders on GitHub or in an image viewer:
+**Theme hooks.** These properties are set on the panel in every theme. The table lists `light` and `dark`; `soft` and
+`nord` set their own values in `ai-docs.css`. Write them with a fallback, so the file still renders on GitHub or in an
+image viewer:
 
 | Property                        | Light     | Dark      | For                      |
 |---------------------------------|-----------|-----------|--------------------------|
@@ -273,8 +274,8 @@ renders on GitHub or in an image viewer:
 | `--doc-bad-bg` / `-line` / `-text`   | `#fee2e2` `#dc2626` `#7f1d1d` | `#3d1113` `#ef4444` `#fecaca` | broken, pending |
 | `--doc-actor-bg` / `-line` / `-text` | `#dbeafe` `#2563eb` `#1e3a8a` | `#16244d` `#60a5fa` `#bfdbfe` | people, outside systems |
 
-`--doc-accent` is your brand colour, the same in both schemes. A dark brand (`#3a4a8c`) is unreadable as text on the
-dark scheme, so use it for strokes, outlines and tints, and use `--doc-text` for labels.
+`--doc-accent` is your brand colour, the same in every theme. A dark brand (`#3a4a8c`) is unreadable as text on the
+dark themes, so use it for strokes, outlines and tints, and use `--doc-text` for labels.
 
 The four tones are the same palette as mermaid's `ok` / `decision` / `bad` / `actor` classes (`warn` is `decision`), so
 hand-drawn and generated diagrams on one page agree.
@@ -301,12 +302,30 @@ reliably in every browser. Leave out a full-size white background `<rect>`, so t
 and follows the scheme.
 
 **Layout** — three columns (nav · prose · outline) that collapse into drawers on a phone, a scroll-spy outline, and a
-light/dark toggle remembered in `localStorage`. The scheme lives on `.doc-root`, never on `<html>`, so the panel never
-fights the host app's own theme state.
+theme picker (below). Type, columns and the top bar are drawn at 110%, as if the browser were zoomed one step, because
+docs are read at length; `--doc-scale` sets it (`1` is the earlier, unscaled size).
 
 **Render cache** — keyed on the file's content, the render pipeline's version and the current locale, so it is
 self-invalidating. Edit a file and reload; there is nothing to warm at deploy and nothing to clear. Set
 `AI_DOCS_CACHE=false` while writing if you prefer.
+
+### Themes
+
+The swatch at the right of the header opens the theme picker:
+
+| Theme   | For                                                                       |
+|---------|---------------------------------------------------------------------------|
+| `light` | white ground, near-black ink                                              |
+| `soft`  | a slightly darker, warmer off-white with softer ink, for less glare       |
+| `nord`  | mid-dark, from the [Nord](https://www.nordtheme.com) palette: Polar Night ground, Snow Storm ink, Frost accents |
+| `dark`  | near-black ground                                                         |
+
+The pick is remembered per browser in `localStorage` (`ai-docs:scheme`); a light or dark choice saved before the picker
+existed keeps working. A reader who hasn't picked gets `ai-docs.theme` if you set one (`AI_DOCS_THEME=soft`), otherwise
+light or dark from the host page's `<html class="dark">` or their OS setting. Mermaid diagrams, inline SVGs, code
+highlighting and callouts all follow the theme. On `nord` your brand accent is lightened for link text so a dark brand
+stays readable; it is used as-is everywhere else. The theme lives on `.doc-root`, never on `<html>`, so the panel never
+fights the host app's own theme state.
 
 ### Embed
 
@@ -314,7 +333,7 @@ Add `?embed=1` to any page URL and the panel renders that page alone: no header,
 copy-path button. It's meant for an iframe inside your own app, such as a help pane beside the screen it explains,
 with a link out to the full page.
 
-- `?scheme=light|dark` picks the colour scheme; it defaults to light. The scheme saved for the full panel is ignored,
+- `?scheme=light|soft|nord|dark` picks the theme; it defaults to light. The scheme saved for the full panel is ignored,
   so the pane matches your app rather than the docs.
 - A link to another page in the panel stays in the iframe and keeps `embed` and `scheme`.
 - On load, and after every link followed inside it, the page posts
@@ -506,6 +525,7 @@ See [`config/ai-docs.php`](config/ai-docs.php).
 | `exclude`             | `[]`             | —                      | path prefixes, matched by whole segment     |
 | `panels`              | `[]`             | —                      | several trees; empty means one              |
 | `tables`              | `scroll`         | `AI_DOCS_TABLES`       | `scroll` or `wrap`; styling only            |
+| `theme`               | `null`           | `AI_DOCS_THEME`        | default theme; `null` follows the OS        |
 | `source_link_base`    | `null`           | `AI_DOCS_SOURCE_BASE`  | code-host base URL for out-of-tree links    |
 | `cache`               | `true`           | `AI_DOCS_CACHE`        | render + search cache                       |
 | `api.tokens`          | `[]`             | `AI_DOCS_TOKEN_HASHES` | sha256 hashes, comma list; empty refuses    |
@@ -534,8 +554,12 @@ Everything else is a CSS custom property you can override:
 .doc-root {
     --doc-accent: #16a34a;
     --doc-measure: 80ch;
+    --doc-scale: 1; /* type and columns at 100% instead of 110% */
 }
 ```
+
+The width breakpoints are tuned for the default `1.1`. At `1` the outline and the page tree become drawers a little
+earlier than they need to, which costs nothing but width.
 
 ## Translations
 

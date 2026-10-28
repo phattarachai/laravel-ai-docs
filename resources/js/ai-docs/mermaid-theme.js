@@ -49,6 +49,34 @@ const VARIABLES = {
     edgeLabelBackground: '#ffffff',
     titleColor: '#1c1d21',
   },
+  soft: {
+    background: '#ece9e1',
+    primaryColor: '#e5e1d7',
+    primaryTextColor: '#2b2a27',
+    primaryBorderColor: '#c4bfb2',
+    secondaryColor: '#dfdacd',
+    tertiaryColor: '#f0ede6',
+    lineColor: '#7f796d',
+    textColor: '#2b2a27',
+    clusterBkg: '#efece5',
+    clusterBorder: '#d6d1c5',
+    edgeLabelBackground: '#ece9e1',
+    titleColor: '#2b2a27',
+  },
+  nord: {
+    background: '#343b48',
+    primaryColor: '#3b4252',
+    primaryTextColor: '#e5e9f0',
+    primaryBorderColor: '#4c566a',
+    secondaryColor: '#434c5e',
+    tertiaryColor: '#313744',
+    lineColor: '#8a94a8',
+    textColor: '#e5e9f0',
+    clusterBkg: '#313744',
+    clusterBorder: '#4c566a',
+    edgeLabelBackground: '#343b48',
+    titleColor: '#e5e9f0',
+  },
   dark: {
     background: '#1b1c23',
     primaryColor: '#282a36',
@@ -74,6 +102,18 @@ const TONES = {
     ok: ['#dcfce7', '#16a34a', '#14532d'],
     bad: ['#fee2e2', '#dc2626', '#7f1d1d'],
     actor: ['#dbeafe', '#2563eb', '#1e3a8a'],
+  },
+  soft: {
+    decision: ['#f6e8c3', '#c27c0e', '#6b3a0c'],
+    ok: ['#d9eed9', '#2f8a46', '#1d4d2a'],
+    bad: ['#f5dbd6', '#c9433a', '#6e211c'],
+    actor: ['#dbe4f2', '#3466b8', '#1f3a6b'],
+  },
+  nord: {
+    decision: ['#4a4536', '#ebcb8b', '#f3e2bd'],
+    ok: ['#3a4540', '#a3be8c', '#d5e5c8'],
+    bad: ['#4a3539', '#d57780', '#f0c4c8'],
+    actor: ['#34495a', '#88c0d0', '#cfe6ee'],
   },
   dark: {
     decision: ['#3b2408', '#f59e0b', '#fde68a'],
@@ -101,8 +141,9 @@ function tone(name, [fill, stroke, text]) {
     }`
 }
 
+/** @param {'light'|'soft'|'nord'|'dark'} scheme */
 export function themeFor(scheme) {
-  const key = scheme === 'dark' ? 'dark' : 'light'
+  const key = scheme in VARIABLES ? scheme : 'light'
   const tones = Object.entries(TONES[key])
     .map(([name, values]) => tone(name, values))
     .join('\n')

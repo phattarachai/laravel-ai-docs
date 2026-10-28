@@ -56,6 +56,12 @@ return [
     'tables' => env('AI_DOCS_TABLES', 'scroll'),
 
     /*
+     | `light`, `soft`, `nord` or `dark`: the theme for a reader who hasn't picked one in
+     | the header. Null follows their OS light/dark setting. Their own pick always wins.
+     */
+    'theme' => env('AI_DOCS_THEME'),
+
+    /*
      | Base URL of a code host, or null to render out-of-tree links as plain text.
      */
     'source_link_base' => env('AI_DOCS_SOURCE_BASE'),

@@ -104,8 +104,8 @@ nothing, which is why this took a fresh module realm to diagnose.
 ## The zoom button is a sibling of the diagram, not a child
 
 `MermaidRenderer` emits `<div class="doc-wide"><button class="doc-zoom">…<div class="doc-mermaid">`.
-Mermaid replaces `.doc-mermaid`'s children on every theme flip, so a button placed inside is eaten
-on the first light/dark toggle.
+Mermaid replaces `.doc-mermaid`'s children on every theme change, so a button placed inside is eaten
+the first time a reader picks another theme.
 
 ## `DocProse` is memoized, and the click handler must stay off it
 

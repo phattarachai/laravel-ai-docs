@@ -20,6 +20,12 @@ final class AiDocs
      */
     public const string DEFAULT_PANEL = 'default';
 
+    /**
+     * The header's theme picker, in menu order. Keep in sync with `SCHEMES` in
+     * resources/js/ai-docs/scheme.js.
+     */
+    public const array THEMES = ['light', 'soft', 'nord', 'dark'];
+
     private static ?Closure $authUsing = null;
 
     /**
@@ -215,12 +221,15 @@ final class AiDocs
     }
 
     /**
-     * @return array{name: string, accent: string, url: string, logo: string|null, tables: string}
+     * `theme` is the default for a reader who hasn't picked one; null follows their OS.
+     *
+     * @return array{name: string, accent: string, url: string, logo: string|null, tables: string, theme: string|null}
      */
     public static function brand(): array
     {
         /** @var array<string, mixed> $brand */
         $brand = (array) config('ai-docs.brand', []);
+        $theme = config('ai-docs.theme');
 
         return [
             'name' => (string) ($brand['name'] ?? 'Docs'),
@@ -228,6 +237,7 @@ final class AiDocs
             'url' => self::appPath((string) ($brand['url'] ?? '/')),
             'logo' => $brand['logo'] === null ? null : self::appPath((string) $brand['logo']),
             'tables' => (string) config('ai-docs.tables', 'wrap'),
+            'theme' => in_array($theme, self::THEMES, strict: true) ? $theme : null,
         ];
     }
 

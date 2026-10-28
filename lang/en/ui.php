@@ -20,8 +20,12 @@ return [
     'nav.hideOutline' => 'Hide outline',
     'nav.showOutline' => 'Show outline',
 
-    'scheme.toLight' => 'Switch to light',
-    'scheme.toDark' => 'Switch to dark',
+    'theme.label' => 'Theme',
+    'theme.current' => 'Theme: :name',
+    'theme.light' => 'Light',
+    'theme.soft' => 'Soft',
+    'theme.nord' => 'Nord',
+    'theme.dark' => 'Dark',
 
     'search.button' => 'Search docs…',
     'search.label' => 'Search docs',

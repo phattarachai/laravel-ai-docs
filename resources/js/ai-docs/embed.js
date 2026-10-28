@@ -1,5 +1,7 @@
 import { useEffect } from 'react'
 
+import { isScheme } from './scheme'
+
 /** see README.md — "Embed" */
 export const EMBED_MESSAGE = 'ai-docs:page'
 
@@ -7,7 +9,9 @@ const EMBED_PARAMS = ['embed', 'scheme']
 
 /** An embedded page follows the host's `?scheme=`, not the scheme saved for the full panel. */
 export function embedScheme() {
-  return new URLSearchParams(window.location.search).get('scheme') === 'dark' ? 'dark' : 'light'
+  const scheme = new URLSearchParams(window.location.search).get('scheme')
+
+  return isScheme(scheme) ? scheme : 'light'
 }
 
 /** The address of the same page outside the iframe: the embed params dropped, the heading kept. */
