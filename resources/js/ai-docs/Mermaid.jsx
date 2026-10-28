@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 
 import { themeFor } from './mermaid-theme'
+import { isScheme } from './scheme'
 
 let loading = null
 let sequence = 0
@@ -53,7 +54,7 @@ async function draw(mermaid, source) {
  *
  * @param {{current: HTMLElement|null}} containerRef the rendered-HTML container
  * @param {string|undefined} slug current page slug
- * @param {'light'|'dark'} scheme
+ * @param {'light'|'soft'|'nord'|'dark'} scheme
  */
 export function useMermaid(containerRef, slug, scheme) {
   useEffect(() => {
@@ -63,7 +64,7 @@ export function useMermaid(containerRef, slug, scheme) {
       return undefined
     }
 
-    const theme = scheme === 'dark' ? 'dark' : 'light'
+    const theme = isScheme(scheme) ? scheme : 'light'
 
     // `data-drawn` is ours; a node pre-filled by a build step has none and is left alone.
     const nodes = Array.from(container.querySelectorAll('.doc-mermaid[data-src]')).filter(

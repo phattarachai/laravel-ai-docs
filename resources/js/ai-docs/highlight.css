@@ -30,6 +30,22 @@
   --hl-injection: #7ee787;
 }
 
+/* `soft` keeps the light set above: it is the same ink on a warmer ground. */
+.doc-root.scheme-nord {
+  --hl-keyword: #81a1c1;
+  --hl-operator: #81a1c1;
+  --hl-type: #8fbcbb;
+  --hl-variable: #d08770;
+  --hl-property: #88c0d0;
+  --hl-value: #a3be8c;
+  --hl-number: #b48ead;
+  --hl-literal: #81a1c1;
+  --hl-comment: #8c97ad;
+  --hl-attribute: #8fbcbb;
+  --hl-generic: #b48ead;
+  --hl-injection: #ebcb8b;
+}
+
 .doc-root .hl-keyword {
   color: var(--hl-keyword);
 }

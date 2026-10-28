@@ -2,6 +2,9 @@
 
 .doc-root {
   --doc-accent: #3b82f6;
+  /* The accent as link and active-nav text. The brand colour arrives inline, so a
+     dark theme that needs it lighter mixes it here instead of overriding it. */
+  --doc-accent-text: var(--doc-accent);
   --doc-accent-fg: #ffffff;
   --doc-bg: #ffffff;
   --doc-nav-bg: #fafafa;
@@ -29,13 +32,19 @@
   --doc-actor-line: #2563eb;
   --doc-actor-text: #1e3a8a;
 
-  --doc-shell: 1480px;
-  --doc-nav-w: 248px;
-  --doc-toc-w: 224px;
+  /* Every type size, the columns and the top bar are multiplied by this, so the
+     panel reads like the browser zoomed to 110% — proportions kept. The width
+     breakpoints below are tuned for 1.1 (the 1.0 values times 1.1); `ch` widths
+     follow the type on their own. Print sets it back to 1. */
+  --doc-scale: 1.1;
+  --doc-shell: calc(1480px * var(--doc-scale));
+  --doc-nav-w: calc(248px * var(--doc-scale));
+  --doc-toc-w: calc(224px * var(--doc-scale));
   --doc-pad: 36px;
   --doc-measure: 96ch;
   --doc-table-size: 16px;
-  --doc-top: 52px;
+  --doc-top: calc(52px * var(--doc-scale));
+  --doc-control: calc(30px * var(--doc-scale));
 
   min-height: 100vh;
   background: var(--doc-bg);
@@ -47,7 +56,7 @@
   font-family:
     'Instrument Sans', 'Sukhumvit Set', 'Leelawadee UI', 'Noto Sans Thai Looped', 'Noto Sans Thai',
     system-ui, sans-serif;
-  font-size: 16px;
+  font-size: calc(16px * var(--doc-scale));
   line-height: 1.75;
   -webkit-font-smoothing: antialiased;
 }
@@ -85,6 +94,61 @@
   --doc-actor-text: #bfdbfe;
 }
 
+/* A slightly darker, warmer off-white with softer ink: less glare than `light`
+   for a long read. */
+.doc-root.scheme-soft {
+  --doc-bg: #f4f2ec;
+  --doc-nav-bg: #ece9e1;
+  --doc-line: #dcd8cd;
+  --doc-rule: #e5e2d9;
+  --doc-text: #2b2a27;
+  --doc-muted: #6c685f;
+  --doc-code-bg: #e9e5db;
+  --doc-hover: #e4e0d5;
+  --doc-scrim: rgb(43 42 39 / 34%);
+
+  --doc-ok-bg: #d9eed9;
+  --doc-ok-line: #2f8a46;
+  --doc-ok-text: #1d4d2a;
+  --doc-warn-bg: #f6e8c3;
+  --doc-warn-line: #c27c0e;
+  --doc-warn-text: #6b3a0c;
+  --doc-bad-bg: #f5dbd6;
+  --doc-bad-line: #c9433a;
+  --doc-bad-text: #6e211c;
+  --doc-actor-bg: #dbe4f2;
+  --doc-actor-line: #3466b8;
+  --doc-actor-text: #1f3a6b;
+}
+
+/* Mid-dark, from the Nord palette: Polar Night ground, Snow Storm ink, Frost and
+   Aurora for the tones. https://www.nordtheme.com/docs/colors-and-palettes */
+.doc-root.scheme-nord {
+  --doc-accent-text: color-mix(in oklab, var(--doc-accent) 62%, #eceff4);
+  --doc-bg: #2e3440;
+  --doc-nav-bg: #333a47;
+  --doc-line: #434c5e;
+  --doc-rule: #3b4252;
+  --doc-text: #e5e9f0;
+  --doc-muted: #a3acbd;
+  --doc-code-bg: #3b4252;
+  --doc-hover: #3b4252;
+  --doc-scrim: rgb(20 24 31 / 55%);
+
+  --doc-ok-bg: #3a4540;
+  --doc-ok-line: #a3be8c;
+  --doc-ok-text: #d5e5c8;
+  --doc-warn-bg: #4a4536;
+  --doc-warn-line: #ebcb8b;
+  --doc-warn-text: #f3e2bd;
+  --doc-bad-bg: #4a3539;
+  --doc-bad-line: #d57780;
+  --doc-bad-text: #f0c4c8;
+  --doc-actor-bg: #34495a;
+  --doc-actor-line: #88c0d0;
+  --doc-actor-text: #cfe6ee;
+}
+
 /* ---- top bar ---------------------------------------------------------- */
 
 .doc-top {
@@ -117,12 +181,12 @@
   display: grid;
   place-items: center;
   flex: none;
-  width: 22px;
-  height: 22px;
+  width: calc(22px * var(--doc-scale));
+  height: calc(22px * var(--doc-scale));
   border-radius: 6px;
   background: var(--doc-accent);
   color: var(--doc-accent-fg);
-  font-size: 11px;
+  font-size: calc(11px * var(--doc-scale));
   font-weight: 700;
 }
 
@@ -132,47 +196,156 @@
 }
 
 .doc-brand {
-  font-size: 15px;
+  font-size: calc(15px * var(--doc-scale));
   font-weight: 650;
   letter-spacing: -0.01em;
   white-space: nowrap;
 }
 
-/* Sibling trees. Only rendered when there are at least two, so the control never
-   shows a choice of one. */
-.doc-panels {
-  display: flex;
+/* ---- header menus ----------------------------------------------------- */
+
+/* The panel switcher and the theme picker. The switcher only renders with two or
+   more panels, so it never offers a choice of one. */
+.doc-menu {
+  position: relative;
   flex: none;
-  gap: 2px;
-  padding: 2px;
-  border-radius: 8px;
-  background: var(--doc-code-bg);
 }
 
-.doc-panel {
-  padding: 3px 10px;
-  border-radius: 6px;
-  color: var(--doc-muted);
-  font-size: 13px;
+.doc-menu-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: var(--doc-control);
+  padding: 0 8px 0 10px;
+  border: 1px solid var(--doc-line);
+  border-radius: 7px;
+  background: var(--doc-bg);
+  color: var(--doc-text);
+  font: inherit;
+  font-size: calc(13.5px * var(--doc-scale));
   font-weight: 550;
   white-space: nowrap;
-  text-decoration: none;
+  cursor: pointer;
 }
 
-.doc-panel:hover {
-  color: var(--doc-text);
+.doc-menu-btn:hover,
+.doc-menu-btn[aria-expanded='true'] {
+  border-color: var(--doc-muted);
 }
 
-.doc-panel.on {
+.doc-menu-chev {
+  flex: none;
+  color: var(--doc-muted);
+  transition: transform 0.12s;
+}
+
+.doc-menu-btn[aria-expanded='true'] .doc-menu-chev {
+  transform: rotate(180deg);
+}
+
+.doc-themes .doc-menu-btn {
+  padding: 0 7px 0 8px;
+}
+
+.doc-menu-list {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 50;
+  min-width: max(100%, calc(176px * var(--doc-scale)));
+  padding: 4px;
+  border: 1px solid var(--doc-line);
+  border-radius: 9px;
   background: var(--doc-bg);
-  box-shadow: 0 1px 2px rgb(15 17 22 / 12%);
+  box-shadow: 0 10px 28px rgb(0 0 0 / 16%);
+}
+
+.doc-themes .doc-menu-list {
+  right: 0;
+  left: auto;
+}
+
+.doc-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 6px 9px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
   color: var(--doc-text);
+  font: inherit;
+  font-size: calc(13.5px * var(--doc-scale));
+  line-height: 1.4;
+  text-align: left;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+/* Hover moves focus too, so the focused row is the one highlight. */
+.doc-menu-item:focus {
+  outline: none;
+  background: var(--doc-hover);
+}
+
+.doc-menu-item.on {
+  font-weight: 600;
+}
+
+.doc-menu-label {
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.doc-menu-btn .doc-menu-label {
+  max-width: 18ch;
+}
+
+.doc-menu-check {
+  flex: none;
+  color: var(--doc-accent-text);
+}
+
+/* Each theme's own ground and ink, whatever the current one is. */
+.doc-swatch {
+  --a: #ffffff;
+  --b: #1c1d21;
+
+  flex: none;
+  width: 14px;
+  height: 14px;
+  border: 1px solid var(--doc-line);
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--a) 50%, var(--b) 50%);
+}
+
+.doc-swatch.is-light {
+  --a: #ffffff;
+  --b: #1c1d21;
+}
+
+.doc-swatch.is-soft {
+  --a: #f4f2ec;
+  --b: #6c685f;
+}
+
+.doc-swatch.is-nord {
+  --a: #2e3440;
+  --b: #88c0d0;
+}
+
+.doc-swatch.is-dark {
+  --a: #16171d;
+  --b: #e7e8ed;
 }
 
 .doc-crumb {
   overflow: hidden;
   color: var(--doc-muted);
-  font-size: 13.5px;
+  font-size: calc(13.5px * var(--doc-scale));
   white-space: nowrap;
   text-overflow: ellipsis;
 }
@@ -193,15 +366,15 @@
   display: flex;
   align-items: center;
   gap: 7px;
-  width: 230px;
-  height: 30px;
+  width: calc(230px * var(--doc-scale));
+  height: var(--doc-control);
   padding: 0 8px 0 10px;
   border: 1px solid var(--doc-line);
   border-radius: 7px;
   background: var(--doc-nav-bg);
   color: var(--doc-muted);
   font: inherit;
-  font-size: 13.5px;
+  font-size: calc(13.5px * var(--doc-scale));
   cursor: pointer;
 }
 
@@ -227,15 +400,15 @@
   border-radius: 5px;
   background: var(--doc-bg);
   font-family: inherit;
-  font-size: 11px;
+  font-size: calc(11px * var(--doc-scale));
 }
 
 .doc-iconbtn {
   display: grid;
   place-items: center;
   flex: none;
-  width: 30px;
-  height: 30px;
+  width: var(--doc-control);
+  height: var(--doc-control);
   padding: 0;
   border: 1px solid var(--doc-line);
   border-radius: 7px;
@@ -275,7 +448,7 @@
    `display: none` — dropping it re-runs auto-placement and the page lands in
    the column that just shrank. Which column is out of flow at a given width is
    the responsive block's business, and it stays that way. */
-@media (min-width: 861px) {
+@media (min-width: 947px) {
   .doc-panetoggle.for-nav {
     display: grid;
     margin-left: -6px;
@@ -293,7 +466,7 @@
   }
 }
 
-@media (min-width: 1061px) {
+@media (min-width: 1167px) {
   .doc-panetoggle.for-toc {
     display: grid;
   }
@@ -362,7 +535,7 @@
   padding: 14px 0 24px;
   border-right: 1px solid var(--doc-line);
   background: var(--doc-nav-bg);
-  font-size: 14px;
+  font-size: calc(14px * var(--doc-scale));
 }
 
 .doc-acc {
@@ -376,7 +549,7 @@
   background: none;
   color: var(--doc-text);
   font: inherit;
-  font-size: 14px;
+  font-size: calc(14px * var(--doc-scale));
   font-weight: 550;
   text-align: left;
   cursor: pointer;
@@ -385,22 +558,22 @@
 /* A subfolder is a heading inside an open group, so it sits below its parent, not beside it. */
 .doc-acc.sub {
   color: var(--doc-muted);
-  font-size: 13.5px;
+  font-size: calc(13.5px * var(--doc-scale));
   font-weight: 500;
 }
 
 .doc-acc:hover {
-  color: var(--doc-accent);
+  color: var(--doc-accent-text);
 }
 
 .doc-acc.on {
-  color: var(--doc-accent);
+  color: var(--doc-accent-text);
 }
 
 .doc-acc .chev {
   flex: none;
   color: var(--doc-muted);
-  font-size: 10px;
+  font-size: calc(10px * var(--doc-scale));
 }
 
 .doc-link {
@@ -408,7 +581,7 @@
   padding: 5px 14px 5px calc(18px + var(--doc-depth, 0) * 12px);
   border-left: 2px solid transparent;
   color: var(--doc-muted);
-  font-size: 13.5px;
+  font-size: calc(13.5px * var(--doc-scale));
   line-height: 1.5;
   text-decoration: none;
   overflow-wrap: anywhere;
@@ -422,7 +595,7 @@
 .doc-link.on {
   border-left-color: var(--doc-accent);
   background: color-mix(in oklab, var(--doc-accent) 8%, transparent);
-  color: var(--doc-accent);
+  color: var(--doc-accent-text);
   font-weight: 600;
 }
 
@@ -507,7 +680,7 @@
 
 .doc-zoom::before {
   content: '⛶';
-  font-size: 13px;
+  font-size: calc(13px * var(--doc-scale));
   line-height: 1;
 }
 
@@ -532,15 +705,15 @@
 
 .doc-updated {
   color: var(--doc-muted);
-  font-size: 13px;
+  font-size: calc(13px * var(--doc-scale));
   white-space: nowrap;
 }
 
 .doc-page.has-updated .doc-prose h1 {
-  padding-right: 240px;
+  padding-right: calc(240px * var(--doc-scale));
 }
 
-@media (max-width: 640px) {
+@media (max-width: 704px) {
   .doc-page.has-updated .doc-pagetools {
     position: static;
     justify-content: flex-end;
@@ -556,8 +729,8 @@
   display: grid;
   place-items: center;
   flex: none;
-  width: 30px;
-  height: 30px;
+  width: var(--doc-control);
+  height: var(--doc-control);
   padding: 0;
   border: 1px solid var(--doc-line);
   border-radius: 7px;
@@ -586,7 +759,7 @@
   border-radius: 8px;
   background: var(--doc-text);
   color: var(--doc-bg);
-  font-size: 13px;
+  font-size: calc(13px * var(--doc-scale));
   transform: translateX(-50%);
 }
 
@@ -616,7 +789,7 @@
   background: none;
   color: var(--doc-muted);
   font: inherit;
-  font-size: 12px;
+  font-size: calc(12px * var(--doc-scale));
   cursor: pointer;
 }
 
@@ -715,7 +888,7 @@
   background: none;
   color: var(--doc-text);
   font: inherit;
-  font-size: 16px;
+  font-size: calc(16px * var(--doc-scale));
   outline: none;
 }
 
@@ -731,7 +904,7 @@
   background: none;
   color: var(--doc-muted);
   font: inherit;
-  font-size: 11px;
+  font-size: calc(11px * var(--doc-scale));
   cursor: pointer;
 }
 
@@ -744,7 +917,7 @@
 .doc-palette-note {
   margin: 10px 8px;
   color: var(--doc-muted);
-  font-size: 13.5px;
+  font-size: calc(13.5px * var(--doc-scale));
 }
 
 .doc-hit {
@@ -773,7 +946,7 @@
 .doc-hit-top b {
   flex: 0 1 auto;
   overflow: hidden;
-  font-size: 14px;
+  font-size: calc(14px * var(--doc-scale));
   font-weight: 600;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -783,7 +956,7 @@
   flex: 1 1 auto;
   overflow: hidden;
   color: var(--doc-muted);
-  font-size: 11.5px;
+  font-size: calc(11.5px * var(--doc-scale));
   white-space: nowrap;
   text-overflow: ellipsis;
 }
@@ -793,7 +966,7 @@
   margin-top: 2px;
   overflow: hidden;
   color: var(--doc-muted);
-  font-size: 12.5px;
+  font-size: calc(12.5px * var(--doc-scale));
   line-height: 1.5;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -812,13 +985,13 @@
   max-height: calc(100vh - var(--doc-top));
   overflow-y: auto;
   padding: 30px 18px 24px 6px;
-  font-size: 12.5px;
+  font-size: calc(12.5px * var(--doc-scale));
 }
 
 .doc-toc .hd {
   margin-bottom: 8px;
   color: var(--doc-muted);
-  font-size: 11px;
+  font-size: calc(11px * var(--doc-scale));
   font-weight: 700;
   letter-spacing: 0.07em;
   text-transform: uppercase;
@@ -839,12 +1012,12 @@
 
 .doc-toc a.lv3 {
   padding-left: 22px;
-  font-size: 12px;
+  font-size: calc(12px * var(--doc-scale));
 }
 
 .doc-toc a.on {
-  border-left-color: var(--doc-accent);
-  color: var(--doc-accent);
+  border-left-color: var(--doc-accent-text);
+  color: var(--doc-accent-text);
   font-weight: 600;
 }
 
@@ -860,7 +1033,7 @@
 .doc-prose h1 {
   margin: 0 0 10px;
   padding-right: 42px;
-  font-size: 28px;
+  font-size: calc(28px * var(--doc-scale));
   line-height: 1.28;
   letter-spacing: -0.02em;
 }
@@ -869,7 +1042,7 @@
   margin: 34px 0 12px;
   padding-top: 18px;
   border-top: 1px solid var(--doc-rule);
-  font-size: 20px;
+  font-size: calc(20px * var(--doc-scale));
   line-height: 1.4;
   letter-spacing: -0.01em;
 }
@@ -877,7 +1050,7 @@
 .doc-prose h3 {
   margin: 24px 0 8px;
   color: var(--doc-muted);
-  font-size: 14px;
+  font-size: calc(14px * var(--doc-scale));
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -885,7 +1058,7 @@
 
 .doc-prose h4 {
   margin: 20px 0 6px;
-  font-size: 16px;
+  font-size: calc(16px * var(--doc-scale));
 }
 
 /* Emitted by the renderer, so no JS walks the headings after mount. */
@@ -893,7 +1066,7 @@
   padding-left: 0.35em;
   border: 0;
   opacity: 0;
-  color: var(--doc-accent);
+  color: var(--doc-accent-text);
   font-weight: 400;
   transition: opacity 0.12s;
 }
@@ -912,13 +1085,13 @@
 
 .doc-prose p {
   margin: 0 0 14px;
-  font-size: 16px;
+  font-size: calc(16px * var(--doc-scale));
   line-height: 1.78;
 }
 
 .doc-prose a {
   border-bottom: 1px solid color-mix(in oklab, var(--doc-accent) 32%, transparent);
-  color: var(--doc-accent);
+  color: var(--doc-accent-text);
   text-decoration: none;
 }
 
@@ -930,7 +1103,7 @@
 .doc-prose ol {
   margin: 0 0 14px;
   padding-left: 22px;
-  font-size: 16px;
+  font-size: calc(16px * var(--doc-scale));
   line-height: 1.78;
 }
 
@@ -977,7 +1150,7 @@
   gap: 7px;
   margin: 0 0 6px;
   color: var(--tone);
-  font-size: 13px;
+  font-size: calc(13px * var(--doc-scale));
   font-weight: 700;
   letter-spacing: 0.02em;
   text-transform: uppercase;
@@ -985,7 +1158,7 @@
 
 .doc-callout-hd::before {
   content: var(--glyph);
-  font-size: 14px;
+  font-size: calc(14px * var(--doc-scale));
 }
 
 .doc-callout.tone-note {
@@ -1033,6 +1206,46 @@
   --tone: #f87171;
 }
 
+.scheme-soft .doc-callout.tone-note {
+  --tone: #2f5fae;
+}
+
+.scheme-soft .doc-callout.tone-tip {
+  --tone: #2f7d42;
+}
+
+.scheme-soft .doc-callout.tone-important {
+  --tone: #7442c8;
+}
+
+.scheme-soft .doc-callout.tone-warning {
+  --tone: #b26a0a;
+}
+
+.scheme-soft .doc-callout.tone-caution {
+  --tone: #c03a31;
+}
+
+.scheme-nord .doc-callout.tone-note {
+  --tone: #88c0d0;
+}
+
+.scheme-nord .doc-callout.tone-tip {
+  --tone: #a3be8c;
+}
+
+.scheme-nord .doc-callout.tone-important {
+  --tone: #c4a3bf;
+}
+
+.scheme-nord .doc-callout.tone-warning {
+  --tone: #ebcb8b;
+}
+
+.scheme-nord .doc-callout.tone-caution {
+  --tone: #e08a92;
+}
+
 .doc-prose hr {
   height: 0;
   margin: 28px 0;
@@ -1063,7 +1276,7 @@
   border-radius: 8px;
   background: var(--doc-code-bg);
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 13.5px;
+  font-size: calc(13.5px * var(--doc-scale));
   line-height: 1.6;
 }
 
@@ -1090,7 +1303,7 @@
 .doc-prose table {
   border-collapse: collapse;
   margin: 0;
-  font-size: var(--doc-table-size);
+  font-size: calc(var(--doc-table-size) * var(--doc-scale));
 }
 
 .doc-prose th,
@@ -1104,7 +1317,7 @@
 .doc-prose th {
   border-bottom: 1px solid var(--doc-line);
   color: var(--doc-muted);
-  font-size: 12px;
+  font-size: calc(12px * var(--doc-scale));
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -1161,7 +1374,7 @@
   border-radius: 8px;
   background: var(--doc-nav-bg);
   color: var(--doc-muted);
-  font-size: 13px;
+  font-size: calc(13px * var(--doc-scale));
   text-align: center;
 }
 
@@ -1190,17 +1403,17 @@
 
 /* ---- narrow ----------------------------------------------------------- */
 
-@media (max-width: 1320px) {
+@media (max-width: 1452px) {
   .doc-root {
-    --doc-nav-w: 224px;
-    --doc-toc-w: 192px;
+    --doc-nav-w: calc(224px * var(--doc-scale));
+    --doc-toc-w: calc(192px * var(--doc-scale));
     --doc-pad: 26px;
   }
 }
 
-@media (max-width: 1180px) {
+@media (max-width: 1298px) {
   .doc-searchbtn {
-    width: 30px;
+    width: var(--doc-control);
     padding: 0;
     justify-content: center;
   }
@@ -1212,7 +1425,7 @@
 }
 
 /* The outline column goes; the top-bar toggle opens it as a drawer instead. */
-@media (max-width: 1060px) {
+@media (max-width: 1166px) {
   .doc-body {
     grid-template-columns: var(--doc-nav-w) minmax(0, 1fr);
   }
@@ -1227,7 +1440,7 @@
     right: 0;
     bottom: 0;
     z-index: 30;
-    width: 268px;
+    width: calc(268px * var(--doc-scale));
     max-height: none;
     padding: 20px 18px 24px;
     border-left: 1px solid var(--doc-line);
@@ -1251,7 +1464,7 @@
   }
 }
 
-@media (max-width: 860px) {
+@media (max-width: 946px) {
   .doc-body {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -1266,7 +1479,7 @@
     bottom: 0;
     left: 0;
     z-index: 30;
-    width: 272px;
+    width: calc(272px * var(--doc-scale));
     height: auto;
     transform: translateX(-100%);
     transition: transform 0.18s ease;
@@ -1319,7 +1532,11 @@
   }
 
   .doc-root,
+  .doc-root.scheme-soft,
+  .doc-root.scheme-nord,
   .doc-root.scheme-dark {
+    --doc-scale: 1;
+    --doc-accent-text: var(--doc-accent);
     --doc-bg: #ffffff;
     --doc-text: #1c1d21;
     --doc-muted: #4b4f57;
@@ -1349,14 +1566,14 @@
      line-height on screen, so print has to override them by the same selector,
      not just `.doc-prose`. Headings and code keep their relative rhythm. */
   .doc-prose {
-    font-size: 12px;
+    font-size: calc(12px * var(--doc-scale));
   }
 
   .doc-prose p,
   .doc-prose ul,
   .doc-prose ol {
     margin-bottom: 9px;
-    font-size: 12px;
+    font-size: calc(12px * var(--doc-scale));
     line-height: 1.55;
   }
 
@@ -1373,23 +1590,23 @@
   }
 
   .doc-prose h1 {
-    font-size: 22px;
+    font-size: calc(22px * var(--doc-scale));
   }
 
   .doc-prose h2 {
-    font-size: 16px;
+    font-size: calc(16px * var(--doc-scale));
   }
 
   .doc-prose h3 {
-    font-size: 11.5px;
+    font-size: calc(11.5px * var(--doc-scale));
   }
 
   .doc-prose h4 {
-    font-size: 13px;
+    font-size: calc(13px * var(--doc-scale));
   }
 
   .doc-prose pre {
-    font-size: 11px;
+    font-size: calc(11px * var(--doc-scale));
   }
 
   .doc-body {
@@ -1528,7 +1745,7 @@
 }
 
 .doc-root.is-embed .doc-prose h1 {
-  font-size: 22px;
+  font-size: calc(22px * var(--doc-scale));
 }
 
 .doc-root.is-embed .doc-page.has-updated .doc-pagetools {

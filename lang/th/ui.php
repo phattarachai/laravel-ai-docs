@@ -16,8 +16,12 @@ return [
     'nav.hideOutline' => 'ซ่อนหัวข้อ',
     'nav.showOutline' => 'แสดงหัวข้อ',
 
-    'scheme.toLight' => 'สลับเป็นโหมดสว่าง',
-    'scheme.toDark' => 'สลับเป็นโหมดมืด',
+    'theme.label' => 'ธีม',
+    'theme.current' => 'ธีม: :name',
+    'theme.light' => 'สว่าง',
+    'theme.soft' => 'ถนอมสายตา',
+    'theme.nord' => 'Nord',
+    'theme.dark' => 'มืด',
 
     'search.button' => 'ค้นหาเอกสาร…',
     'search.label' => 'ค้นหาเอกสาร',
